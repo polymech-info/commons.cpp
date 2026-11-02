@@ -8,14 +8,16 @@
 // multiple translation units.
 //
 
-#include "core/app_exe_directory.hpp"
-
 #include <cstdint>
 #include <filesystem>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+
+namespace pm::commons::host {
+std::filesystem::path exe_bin_directory();
+}
 
 #if defined(_WIN32)
 #  ifndef WIN32_LEAN_AND_MEAN
@@ -199,7 +201,7 @@ inline void append_path_part(std::wstring& path, const std::wstring& part)
 
 inline std::wstring exe_adjacent_bin_dir()
 {
-    return media::app::exe_bin_directory().wstring();
+    return pm::commons::host::exe_bin_directory().wstring();
 }
 
 /// Build a full environment block with exe-adjacent/bin prepended to PATH

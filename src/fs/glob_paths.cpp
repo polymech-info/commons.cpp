@@ -1,6 +1,6 @@
 #include "fs/glob_paths.hpp"
 
-#include "output_path.hpp"
+#include "fs/output_path.hpp"
 #include "fs/path_sanitizer.hpp"
 #include "net/url_fetch.hpp"
 

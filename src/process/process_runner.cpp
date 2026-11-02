@@ -1,8 +1,8 @@
 #include "process_runner.hpp"
 
 #include "string/string_sanitizers.hpp"
+#include "host/services.hpp"
 #include "logging/pm_log.hpp"
-#include "ui_defaults.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -66,7 +66,7 @@ void apply_app_search_paths(RunOptions& opts)
 {
     if (!opts.augment_path && !opts.use_shell && opts.extra_path_prepends.empty())
         return;
-    const auto dirs = media::ui_defaults::app_search_path_dirs();
+    const auto dirs = pm::commons::host::app_search_path_dirs();
     if (dirs.empty())
         return;
     std::vector<std::string> merged;
@@ -130,7 +130,7 @@ void apply_posix_child_env(const RunOptions& opts)
                 path.push_back(':');
             path += part;
         }
-        const std::string bin = media::app::exe_bin_directory().string();
+        const std::string bin = pm::commons::host::exe_bin_directory().string();
         if (!bin.empty()) {
             if (!path.empty())
                 path.push_back(':');
@@ -991,7 +991,7 @@ RunResult run_sync(const RunOptions& opts)
                 path.push_back(':');
             path += part;
         }
-        const std::string bin = media::app::exe_bin_directory().string();
+        const std::string bin = pm::commons::host::exe_bin_directory().string();
         if (!bin.empty()) {
             if (!path.empty())
                 path.push_back(':');

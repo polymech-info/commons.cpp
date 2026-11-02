@@ -19,6 +19,23 @@ else()
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "[/\\\\]library_win\\.cpp$")
 endif()
 
+# Host call sites. They keep the settings store and CLI registration headers.
+foreach(_drop IN ITEMS
+    "security[/\\\\]cli\\.cpp$"
+    "security[/\\\\]cli_info\\.cpp$"
+    "security[/\\\\]consent_surface\\.cpp$"
+    "security[/\\\\]ui[/\\\\]win[/\\\\]ConsentDlg\\.cpp$"
+    "security[/\\\\]ui[/\\\\]win[/\\\\]ConsentDlg_i18n\\.cpp$"
+    "security[/\\\\]shim[/\\\\]pm_sb_shim\\.cpp$"
+    "cli[/\\\\]cli_command_tree_doc\\.cpp$")
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
+endforeach()
+
+option(PM_COMMONS_HOST_SINGLETONS "Host compiles host/services.cpp once per process" OFF)
+if(PM_COMMONS_HOST_SINGLETONS)
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "host[/\\\\]services\\.cpp$")
+endif()
+
 # A purged src/ is a legal configure. The host still links pm-commons-lib.
 if(PM_COMMONS_SOURCES)
   add_library(pm-commons-lib STATIC ${PM_COMMONS_SOURCES})
@@ -35,17 +52,15 @@ if(PM_COMMONS_SOURCES)
   if(MSVC)
     target_compile_definitions(pm-commons-lib PRIVATE
       _CRT_SECURE_NO_WARNINGS
-      _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING=1)
+      _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING=1
+      NOMINMAX
+      _WIN32_WINNT=0x0A00)
     target_compile_options(pm-commons-lib PRIVATE /W3 /utf-8 /EHsc)
   else()
     target_compile_options(pm-commons-lib PRIVATE -Wall -Wextra)
   endif()
-  # A few moved sources still include host headers that stayed in Tanit
-  # (logging/pm_log.hpp, ui_defaults.hpp, output_path.hpp, media/probe.hpp).
+  # Host facts arrive through host/services.hpp. The settings store stays on the host.
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    target_include_directories(pm-commons-lib PRIVATE
-      "${CMAKE_SOURCE_DIR}/src"
-      "${CMAKE_SOURCE_DIR}/src/core")
     if(TARGET Boost::url)
       target_link_libraries(pm-commons-lib PUBLIC Boost::url Boost::asio)
     endif()
@@ -61,6 +76,12 @@ if(PM_COMMONS_SOURCES)
     if(TARGET logger)
       target_link_libraries(pm-commons-lib PUBLIC logger)
     endif()
+    if(TARGET pm-libmagic)
+      target_link_libraries(pm-commons-lib PUBLIC pm-libmagic)
+    endif()
+    if(TARGET sodium)
+      target_link_libraries(pm-commons-lib PUBLIC sodium)
+    endif()
     if(FEATURE_JQ AND TARGET jq)
       target_compile_definitions(pm-commons-lib PRIVATE FEATURE_JQ=1)
       target_link_libraries(pm-commons-lib PUBLIC jq)
@@ -73,6 +94,25 @@ if(PM_COMMONS_SOURCES)
     if(FEATURE_COMMAND_LLAMA_INFERENCE)
       target_compile_definitions(pm-commons-lib PRIVATE FEATURE_COMMAND_LLAMA_INFERENCE=1)
     endif()
+    foreach(_feat IN ITEMS
+        FEATURE_WINDOWS_GPO
+        FEATURE_PLUGINS
+        FEATURE_SECURE_STORAGE
+        FEATURE_SECURE_STORAGE_WIN_HELLO
+        FEATURE_SECURITY_AUDIT_LOG
+        FEATURE_SECURITY_GATEWAY
+        FEATURE_SECURITY_SANDBOX
+        FEATURE_SECURITY_WIN_ACL
+        FEATURE_SECURITY_CRYPTO_WIN_DPAPI
+        FEATURE_ANTI_HACKING)
+      if(DEFINED ${_feat})
+        if(${_feat})
+          target_compile_definitions(pm-commons-lib PRIVATE ${_feat}=1)
+        else()
+          target_compile_definitions(pm-commons-lib PRIVATE ${_feat}=0)
+        endif()
+      endif()
+    endforeach()
   endif()
 else()
   add_library(pm-commons-lib INTERFACE)
