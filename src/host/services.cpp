@@ -71,8 +71,10 @@ void set_save_subtree(std::function<bool(const std::string&, const nlohmann::jso
 }
 bool load_subtree(const std::string& key, nlohmann::json& out, std::string& err)
 {
-    if (!g_load_subtree)
+    if (!g_load_subtree) {
+        err = "settings store is not installed";
         return false;
+    }
     return g_load_subtree(key, out, err);
 }
 bool save_subtree(const std::string& key, const nlohmann::json& value, std::string& err)

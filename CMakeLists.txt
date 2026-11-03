@@ -70,6 +70,9 @@ if(PM_COMMONS_SOURCES)
     if(TARGET nlohmann_json::nlohmann_json)
       target_link_libraries(pm-commons-lib PUBLIC nlohmann_json::nlohmann_json)
     endif()
+    if(picosha2_SOURCE_DIR)
+      target_include_directories(pm-commons-lib PRIVATE "${picosha2_SOURCE_DIR}")
+    endif()
     if(TARGET pranav_glob)
       target_link_libraries(pm-commons-lib PUBLIC pranav_glob)
     endif()
@@ -95,6 +98,9 @@ if(PM_COMMONS_SOURCES)
       target_compile_definitions(pm-commons-lib PRIVATE FEATURE_COMMAND_LLAMA_INFERENCE=1)
     endif()
     foreach(_feat IN ITEMS
+        FEATURE_INSTALLER_VFS
+        FEATURE_INSTALLER_SHELL
+        FEATURE_INSTALLER_EXTRACT
         FEATURE_WINDOWS_GPO
         FEATURE_PLUGINS
         FEATURE_SECURE_STORAGE

@@ -27,6 +27,7 @@
 #include "pm_branding_config.hpp"
 #include "version.hpp"
 
+#include "commons/commons_host.hpp"
 #include "core/settings_store.hpp"
 #include "llm/chat_session_store.hpp"
 #include "llm/mcp_config.hpp"
@@ -3018,6 +3019,10 @@ void cmd_antihack(const ah::ScanOptions& opts) {
 } // namespace
 
 int main(int argc, char** argv) {
+    // pm-media-security is a static library. Without this call the linker drops
+    // commons_host.cpp and every settings load/save reports "not installed".
+    pm::commons::host::install_process_hooks();
+
     // Route all pm::log / spdlog output to stderr so it never contaminates the
     // JSON-over-stdout protocol used by the test orchestrator. "trace" gives
     // maximum visibility into gateway decisions during development.

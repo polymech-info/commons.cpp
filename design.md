@@ -2,6 +2,8 @@
 
 The contract is README.md. This list is the order to take next.
 
+`media::zip_store` lives in `src/fs/zip_store.cpp`. Settings archive and the installer extract verb include `fs/zip_store.hpp`. `pm-media` links `pm-commons-lib`; it does not compile a second copy.
+
 1. Tanit compiles `packages/commons.cpp/src` straight into `pm-media` (security compiles `src/path/path.cpp` only). `pm-commons-lib` stays the standalone test library. Next, drop the host copies once each package file is the original body: `src/string_utils.cpp`, `src/utilities/uuid_generator.cpp`, and `src/fs/filters`. Leave `src/core/uri.cpp` (Boost) and the PATH half of `src/core/app_resolver.cpp` until those dependencies move with the file. `packages/vfs.cpp/src/commons` still has its own path copy.
 2. Pass `process::which` a PATHEXT list from the host on Windows. The registry, App Paths, Start Menu, and package-family scan stay in `app_resolver.cpp`.
 3. Scheduler claims already take a process-alive hook. The host should pass its existing liveness check when it links the library. Do not pull a process snapshot into this package.

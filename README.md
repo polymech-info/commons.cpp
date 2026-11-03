@@ -1,8 +1,6 @@
 # pm-commons
 
-Portable primitives for Tanit and other PolyMech apps: UTF-8 strings, 32/64-bit ids, path policy, URI parsing, gitignore matching, magic-byte sniffing, a dynamic loader, PATH lookup, task ids, a scheduler claim file, and a length-prefixed IPC frame.
-
-The static library does not replace the host copies in `src/` yet. Those stay until a call site links `pm-commons-lib`. It also does not replace `packages/vfs.cpp` (that package still has its own path copy), `packages/ipc` (sockets and a JSON library), or the Win32 app resolver.
+Portable primitives for Tanit and other PolyMech apps
 
 `operator bool` on `pm::commons::Error` is true on failure.
 
