@@ -17,11 +17,6 @@ inline nlohmann::json try_parse(std::string_view text)
     return nlohmann::json::parse(text, nullptr, /*allow_exceptions=*/false);
 }
 
-inline nlohmann::json try_parse(const std::string& text)
-{
-    return try_parse(std::string_view{text});
-}
-
 inline nlohmann::json try_parse(std::istream& in)
 {
     return nlohmann::json::parse(in, nullptr, /*allow_exceptions=*/false);
