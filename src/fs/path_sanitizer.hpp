@@ -1,5 +1,5 @@
 #pragma once
-// Declarations only. Definitions are packages/commons.cpp/src/path/path.cpp.
+// Declarations only. Definitions are fs/path_sanitizer.cpp in this package.
 
 #if defined(_MSC_VER)
 #define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING 1

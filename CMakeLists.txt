@@ -24,6 +24,7 @@ foreach(_drop IN ITEMS
     "security[/\\\\]cli\\.cpp$"
     "security[/\\\\]cli_info\\.cpp$"
     "security[/\\\\]consent_surface\\.cpp$"
+    "security[/\\\\]ConsentDelegateRegistry\\.cpp$"
     "security[/\\\\]ui[/\\\\]win[/\\\\]ConsentDlg\\.cpp$"
     "security[/\\\\]ui[/\\\\]win[/\\\\]ConsentDlg_i18n\\.cpp$"
     "security[/\\\\]shim[/\\\\]pm_sb_shim\\.cpp$"
