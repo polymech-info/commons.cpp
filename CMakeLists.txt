@@ -19,6 +19,20 @@ else()
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "[/\\\\]library_win\\.cpp$")
 endif()
 
+# Android has no libsodium, libmagic, or Win32 security backends. Probe is
+# stubbed in the Android host. URI parsing still needs Boost, fetched by the app.
+if(ANDROID)
+  foreach(_drop IN ITEMS
+      "storage[/\\\\]secure_storage\\.cpp$"
+      "storage[/\\\\]secure_storage_win\\.cpp$"
+      "storage[/\\\\]asset_bundle\\.cpp$"
+      "security[/\\\\]ToolIdentity\\.cpp$"
+      "media[/\\\\]probe\\.cpp$"
+      "[/\\\\]win[/\\\\]")
+    list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
+  endforeach()
+endif()
+
 # Host call sites. They keep the settings store and CLI registration headers.
 foreach(_drop IN ITEMS
     "security[/\\\\]cli\\.cpp$"
