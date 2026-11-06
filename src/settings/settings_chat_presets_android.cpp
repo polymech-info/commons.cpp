@@ -2,9 +2,9 @@
  * Android: chat provider + presets (desktop-compatible settings.json shape).
  * FEATURE_HOME_LLM_TOOLS stays off — this file is settings-only.
  */
-#include "core/settings_runtime.hpp"
-#include "core/settings_store.hpp"
-#include "core/chat_settings_schema.hpp"
+#include "settings/settings_runtime.hpp"
+#include "settings/settings_store.hpp"
+#include "settings/chat_settings_schema.hpp"
 
 #include <chrono>
 #include <cctype>

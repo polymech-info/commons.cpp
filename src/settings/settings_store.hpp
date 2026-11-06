@@ -4,8 +4,8 @@
 #include "win/settings_store.hpp"
 #else
 
-#include "core/polymech_export.h"
-#include "core/settings_types.hpp"
+#include "export/polymech_export.h"
+#include "settings/settings_types.hpp"
 
 #include <filesystem>
 #include <functional>

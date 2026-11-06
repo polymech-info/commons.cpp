@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "core/settings_archive.hpp"
+#include "settings/settings_archive.hpp"
 
 namespace media::pmbackup {
 

@@ -1,6 +1,6 @@
-#include "core/command_finish_i18n.hpp"
+#include "commands/command_finish_i18n.hpp"
 
-#include "core/settings_store.hpp"
+#include "settings/settings_store.hpp"
 
 #include <string>
 #include "string/string_utils.hpp"

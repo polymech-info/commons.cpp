@@ -28,10 +28,10 @@
 #include "version.hpp"
 
 #include "commons/commons_host.hpp"
-#include "core/settings_store.hpp"
+#include "settings/settings_store.hpp"
 #include "llm/chat_session_store.hpp"
 #include "llm/mcp_config.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 #include "model/resource_schema.hpp"
 #include "storage/asset_bundle.hpp"
 #include "storage/bundle_pub_key.hpp"

@@ -6,7 +6,7 @@
 
 #if defined(FEATURE_COMMAND_IPC_NEXT) && FEATURE_COMMAND_IPC_NEXT
 
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #include <picosha2.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/settings_runtime.hpp"
+#include "settings/settings_runtime.hpp"
 
 #include <nlohmann/json.hpp>
 

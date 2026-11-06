@@ -1,14 +1,14 @@
-﻿#if !defined(FEATURE_MCP_CLIENT)
+#if !defined(FEATURE_MCP_CLIENT)
 #define FEATURE_MCP_CLIENT 1
 #endif
 
-#include "core/settings_archive.hpp"
+#include "settings/settings_archive.hpp"
 #include "fs/path_sanitizer.hpp"
 
-#include "core/settings_store.hpp"
-#include "core/settings_portable.hpp"
+#include "settings/settings_store.hpp"
+#include "settings/settings_portable.hpp"
 #include "fs/zip_store.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 #include "security/security_defaults.hpp"
 
 #if FEATURE_MCP_CLIENT

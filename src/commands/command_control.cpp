@@ -1,7 +1,7 @@
 #include "command_control.hpp"
 
 #include "command_runner.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 #if defined(FEATURE_COMMAND_IPC_NEXT) && FEATURE_COMMAND_IPC_NEXT
 #include "cmd_ipc.hpp"
 #include <nlohmann/json.hpp>

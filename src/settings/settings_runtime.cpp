@@ -1,10 +1,10 @@
-#include "core/settings_runtime.hpp"
+#include "settings/settings_runtime.hpp"
 #include "fs/path_sanitizer.hpp"
 #include "ui_defaults.hpp"
 
-#include "core/chat_settings_schema.hpp"
-#include "core/settings_store.hpp"
-#include "logger/logger.h"
+#include "settings/chat_settings_schema.hpp"
+#include "settings/settings_store.hpp"
+#include "logging/pm_log.hpp"
 #if defined(FEATURE_WINDOWS_GPO) && FEATURE_WINDOWS_GPO
 #include "policy/app_policy.hpp"
 #endif

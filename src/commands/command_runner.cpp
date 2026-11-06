@@ -10,7 +10,7 @@
 #include <nlohmann/json.hpp>
 
 #include "constants.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #include <algorithm>
 #include <atomic>

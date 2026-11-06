@@ -1,11 +1,11 @@
-#include "core/settings_store.hpp"
+#include "settings/settings_store.hpp"
 #include "fs/path_sanitizer.hpp"
 
 #if !defined(_WIN32)
 
-#include "core/app_exe_directory.hpp"
-#include "core/chat_settings_schema.hpp"
-#include "core/settings_portable.hpp"
+#include "process/app_exe_directory.hpp"
+#include "settings/chat_settings_schema.hpp"
+#include "settings/settings_portable.hpp"
 #include "ui_defaults.hpp"
 
 #include <cstdlib>

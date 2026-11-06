@@ -1,8 +1,8 @@
-#include "core/settings_portable.hpp"
+#include "settings/settings_portable.hpp"
 #include "fs/path_sanitizer.hpp"
 
-#include "core/chat_settings_schema.hpp"
-#include "logger/logger.h"
+#include "settings/chat_settings_schema.hpp"
+#include "logging/pm_log.hpp"
 
 #include <sodium.h>
 

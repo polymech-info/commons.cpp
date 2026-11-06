@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "win/LayoutStore.hpp"
-#include "core/polymech_export.h"
-#include "core/settings_portable.hpp"
+#include "export/polymech_export.h"
+#include "settings/settings_portable.hpp"
 
 #include <Windows.h>
 #include <nlohmann/json.hpp>

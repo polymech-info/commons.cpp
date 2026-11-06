@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/settings_types.hpp"
+#include "settings/settings_types.hpp"
 
 #include <filesystem>
 #include <string>

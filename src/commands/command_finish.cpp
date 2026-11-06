@@ -4,11 +4,11 @@
 
 #include "audio/notifications.hpp"
 #include "constants.hpp"
-#include "core/app_exe_directory.hpp"
-#include "core/command_variables.hpp"
-#include "core/settings_runtime.hpp"
+#include "process/app_exe_directory.hpp"
+#include "commands/command_variables.hpp"
+#include "settings/settings_runtime.hpp"
 #include "net/uri.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #if defined(FEATURE_STT) && FEATURE_STT
 #  include "core/audio.hpp"

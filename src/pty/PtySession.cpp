@@ -2,7 +2,7 @@
 
 #include "host/services.hpp"
 #include "process/process_helpers.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #include <atomic>
 #include <algorithm>

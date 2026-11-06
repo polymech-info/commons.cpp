@@ -1,4 +1,4 @@
-#include "core/chat_settings_schema.hpp"
+#include "settings/chat_settings_schema.hpp"
 
 #include <algorithm>
 #include <cctype>

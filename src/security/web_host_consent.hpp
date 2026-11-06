@@ -17,7 +17,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #if defined(_WIN32) && !defined(PM_IMAGE_CLI_ONLY)
 #  include "constants.hpp"

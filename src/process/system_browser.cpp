@@ -1,4 +1,4 @@
-#include "core/system_browser.hpp"
+#include "process/system_browser.hpp"
 
 #include "net/uri.hpp"
 

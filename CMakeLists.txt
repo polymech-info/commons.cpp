@@ -7,6 +7,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     LANGUAGES CXX)
 endif()
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/logging.cmake")
+
 # Every translation unit under src/. Drop a file in and the next configure picks it up.
 # The other platform's library unit cannot compile here.
 file(GLOB_RECURSE PM_COMMONS_SOURCES CONFIGURE_DEPENDS
@@ -25,6 +27,8 @@ endif()
 # The source stays here; pm-media compiles it.
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "ipc[/\\\\]cmd_ipc\\.cpp$")
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "commands[/\\\\].*\\.cpp$")
+# Compiled by the logger target in cmake/logging.cmake, then linked into this lib.
+list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "logging[/\\\\]logger\\.cpp$")
 # Host image compiles these. They need branding, the settings profile, or Win32
 # headers that this static library does not set up on every platform.
 foreach(_drop IN ITEMS

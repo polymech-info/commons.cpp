@@ -2,7 +2,7 @@
 
 #include "host_api.hpp"
 #include "plugin_guids.h"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #include "host/services.hpp"
 

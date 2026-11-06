@@ -1,7 +1,7 @@
 #pragma once
 
 #include "logging/pm_log_level.hpp"
-#include "logger/logger.h"
+#include "logging/logger.h"
 
 #include <string>
 #include <string_view>

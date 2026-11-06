@@ -1,6 +1,6 @@
 #include "command_variables.hpp"
 
-#include "core/settings_store.hpp"
+#include "settings/settings_store.hpp"
 
 #include <algorithm>
 #include <cctype>

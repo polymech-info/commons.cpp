@@ -1,6 +1,6 @@
 #include "cli_cancel.hpp"
 
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #if !defined(_WIN32)
 #  include <csignal>

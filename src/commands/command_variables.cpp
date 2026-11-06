@@ -1,10 +1,10 @@
 #include "command_variables.hpp"
-#include "core/app_storage.hpp"
+#include "settings/app_storage.hpp"
 #include "fs/path_sanitizer.hpp"
-#include "core/settings_store.hpp"
-#include "settings_portable.hpp"
+#include "settings/settings_store.hpp"
+#include "settings/settings_portable.hpp"
 #include "vfs/virtual_uri.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 #include "string/string_utils.hpp"
 
 #include <cctype>

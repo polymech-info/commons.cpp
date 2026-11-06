@@ -1,6 +1,6 @@
 #include "security/cli_info.hpp"
 
-#include "core/settings_store.hpp"
+#include "settings/settings_store.hpp"
 #include "doc/cli_md_generator.hpp"
 #include "pm_branding_config.hpp"
 

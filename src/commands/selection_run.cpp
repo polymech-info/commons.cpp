@@ -1,10 +1,10 @@
 #include "selection_run.hpp"
 
-#include "core/command_control.hpp"
+#include "commands/command_control.hpp"
 #include "string/string_utils.hpp"
-#include "core/command_variables.hpp"
+#include "commands/command_variables.hpp"
 #include "process/process_runner.hpp"
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #include <algorithm>
 #include <atomic>

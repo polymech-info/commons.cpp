@@ -1,9 +1,9 @@
 #include "security/consent_surface.hpp"
 
-#include "core/chat_settings_schema.hpp"
-#include "core/cli_cancel.hpp"
-#include "core/settings_store.hpp"
-#include "logger/logger.h"
+#include "settings/chat_settings_schema.hpp"
+#include "process/cli_cancel.hpp"
+#include "settings/settings_store.hpp"
+#include "logging/pm_log.hpp"
 
 #include <nlohmann/json.hpp>
 

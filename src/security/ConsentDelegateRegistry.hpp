@@ -21,7 +21,7 @@
 // A copy inside pm-commons-lib is a different pointer in each image, so the
 // plugin never sees the exe's auto-allow or WebView delegate and denies.
 
-#include "core/polymech_export.h"
+#include "export/polymech_export.h"
 
 namespace pm::security {
 

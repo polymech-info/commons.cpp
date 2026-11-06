@@ -4,7 +4,7 @@
 #include "fs/path_sanitizer.hpp"
 #include "net/url_fetch.hpp"
 
-#include "logger/logger.h"
+#include "logging/pm_log.hpp"
 
 #include <algorithm>
 #include <cctype>

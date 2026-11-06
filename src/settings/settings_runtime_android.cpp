@@ -3,8 +3,8 @@
  * Sound cues use the same `workbench.sound_notifications_enabled` flag as desktop.
  * Chat presets live in settings_chat_presets_android.cpp.
  */
-#include "core/settings_runtime.hpp"
-#include "core/settings_store.hpp"
+#include "settings/settings_runtime.hpp"
+#include "settings/settings_store.hpp"
 
 #include <cctype>
 #include <string>
