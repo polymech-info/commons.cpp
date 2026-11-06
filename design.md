@@ -82,7 +82,7 @@ These are the store, not callers. They were outside the table above.
 | Android readers | `src/core/settings_runtime_android.cpp`, `src/core/settings_chat_presets_android.cpp` | Same typed document, second body. |
 | Batch sessions file | `sessions.json` IO inside `src/win/settings_store.cpp` | `src/core/batch_queue.hpp` is the in-memory queue. The file lives in the store. |
 | Profile backup | `src/core/pmbackup.cpp` | Cloud `.pmbackup` on top of `settings_archive`. |
-| Settings owner | `settings_ipc_*` in `src/win/settings_store.cpp` | `src/core/cmd_ipc.cpp` only forwards. `test:core:settings` drives these verbs. The IPC server stays. |
+| Settings owner | `settings_ipc_*` in `settings/win/settings_store.cpp` | The bus is `ipc/cmd_ipc.cpp`. The host handler list in `src/core/cmd_ipc_host.cpp` forwards `settings_*`. `test:core:settings` drives these verbs. |
 | Credential files | `src/lib/provider_oauth.cpp`, `src/lib/pm_zitadel_oauth.cpp` | `merge_provider_credentials` reads `oauth-tokens.json` and `zitadel-oauth.json` through `pm::storage`, then can write the tanit key back. A JSON-only reader leaves those providers empty. |
 | Policy temp dir | `pm::policy::policy_temp_dir` in `settings_runtime.cpp` | One override. The host pins `temp` in the layout. The store does not include `policy/app_policy.hpp`. |
 

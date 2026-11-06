@@ -15,9 +15,16 @@ file(GLOB_RECURSE PM_COMMONS_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 if(WIN32)
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "[/\\\\]library_posix\\.cpp$")
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "[/\\\\]file_watcher\\.cpp$")
 else()
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "[/\\\\]library_win\\.cpp$")
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "[/\\\\]file_watcher_win32\\.cpp$")
 endif()
+
+# Standalone Asio and FEATURE_COMMAND_IPC_NEXT live on the host image.
+# The source stays here; pm-media compiles it.
+list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "ipc[/\\\\]cmd_ipc\\.cpp$")
+list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "commands[/\\\\].*\\.cpp$")
 
 # Android has no libsodium, libmagic, or Win32 security backends. Probe is
 # stubbed in the Android host. URI parsing still needs Boost, fetched by the app.

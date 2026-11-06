@@ -11,9 +11,9 @@
 #include "llm/provider_tools.hpp"
 #include "logger/logger.h"
 #include "storage/secure_storage.hpp"
-#include "core/file_watcher.hpp"
+#include "fs/file_watcher.hpp"
 #if defined(FEATURE_COMMAND_IPC_NEXT) && FEATURE_COMMAND_IPC_NEXT
-#include "core/cmd_ipc.hpp"
+#include "ipc/cmd_ipc.hpp"
 #endif 
 
 #include <sodium.h>
