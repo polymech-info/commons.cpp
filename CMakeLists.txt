@@ -46,9 +46,32 @@ foreach(_drop IN ITEMS
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
 endforeach()
 
+# A sibling that only needs paths, strings, and process helpers. Net, libmagic,
+# and libsodium units stay out until that parent fetches Boost, curl, and sodium.
+option(PM_COMMONS_LEAN "Skip net, media probe, and libsodium translation units" OFF)
+if(PM_COMMONS_LEAN)
+  foreach(_drop IN ITEMS
+      "net[/\\\\]url_fetch\\.cpp$"
+      "media[/\\\\]probe\\.cpp$"
+      "storage[/\\\\]secure_storage\\.cpp$"
+      "storage[/\\\\]asset_bundle\\.cpp$"
+      "security[/\\\\]ToolIdentity\\.cpp$")
+    list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
+  endforeach()
+endif()
+
 option(PM_COMMONS_HOST_SINGLETONS "Host compiles host/services.cpp once per process" OFF)
 if(PM_COMMONS_HOST_SINGLETONS)
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "host[/\\\\]services\\.cpp$")
+endif()
+
+# The profile TUs stay on the host targets. tanit-security compiles the Windows
+# store with FEATURE_COMMAND_IPC_NEXT=0; pm-media compiles it with the app flags.
+# file_store.cpp is the Store interface and is part of this library.
+list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "settings[/\\\\].*\\.cpp$")
+set(_PM_COMMONS_FILE_STORE "${CMAKE_CURRENT_SOURCE_DIR}/src/settings/file_store.cpp")
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND EXISTS "${_PM_COMMONS_FILE_STORE}")
+  list(APPEND PM_COMMONS_SOURCES "${_PM_COMMONS_FILE_STORE}")
 endif()
 
 # A purged src/ is a legal configure. The host still links pm-commons-lib.
@@ -73,6 +96,11 @@ if(PM_COMMONS_SOURCES)
     target_compile_options(pm-commons-lib PRIVATE /W3 /utf-8 /EHsc)
   else()
     target_compile_options(pm-commons-lib PRIVATE -Wall -Wextra)
+  endif()
+  # file_store.cpp includes the profile header, which still includes host layout types.
+  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    target_include_directories(pm-commons-lib PRIVATE "${CMAKE_SOURCE_DIR}/src")
+    target_compile_definitions(pm-commons-lib PRIVATE POLYMECH_STATIC_BUILD=1)
   endif()
   # Host facts arrive through host/services.hpp. The settings store stays on the host.
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
