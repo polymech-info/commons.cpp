@@ -25,6 +25,19 @@ endif()
 # The source stays here; pm-media compiles it.
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "ipc[/\\\\]cmd_ipc\\.cpp$")
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "commands[/\\\\].*\\.cpp$")
+# Host image compiles these. They need branding, the settings profile, or Win32
+# headers that this static library does not set up on every platform.
+foreach(_drop IN ITEMS
+    "fs_size_win32\\.cpp$"
+    "stdio_child_runner\\.cpp$"
+    "cli_cancel\\.cpp$"
+    "app_exe_directory\\.cpp$"
+    "app_storage\\.cpp$"
+    "pmbackup\\.cpp$"
+    "app_resolver\\.cpp$"
+    "system_browser\\.cpp$")
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
+endforeach()
 
 # Android has no libsodium, libmagic, or Win32 security backends. Probe is
 # stubbed in the Android host. URI parsing still needs Boost, fetched by the app.

@@ -30,7 +30,7 @@ Relevant code / build areas:
 - `src/cli/pm_image_register_cli.cpp` - CLI flags, UI launch path, MCP bind,
   custom commands.
 - `src/core/library_utils.cpp` - explicit DLL loading helpers.
-- `src/core/stdio_child_runner.hpp` / `.cpp` - tool / sidecar process launch.
+- `packages/commons.cpp/src/process/stdio_child_runner.hpp` / `.cpp` - tool / sidecar process launch.
 - `src/security/*` - `SecurityGateway`, policy, grants, audit, AppContainer.
 - `src/win/assistant/uia_spy.*`, `src/win/inspect.cpp`,
   `src/win/session_replay/*` - UIAutomation client / inspection surfaces.
