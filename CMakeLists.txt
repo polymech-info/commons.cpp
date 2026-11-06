@@ -29,6 +29,8 @@ list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "ipc[/\\\\]cmd_ipc\\.cpp$")
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "commands[/\\\\].*\\.cpp$")
 # Compiled by the logger target in cmake/logging.cmake, then linked into this lib.
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "logging[/\\\\]logger\\.cpp$")
+# kainjow/Mustache is fetched by the host image.
+list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "mustache_render\\.cpp$")
 # Host image compiles these. They need branding, the settings profile, or Win32
 # headers that this static library does not set up on every platform.
 foreach(_drop IN ITEMS
