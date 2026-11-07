@@ -104,6 +104,36 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND EXISTS "${_PM_COMM
   list(APPEND PM_COMMONS_SOURCES "${_PM_COMMONS_FILE_STORE}")
 endif()
 
+# Drop translation units whose third-party dependency is not in this build.
+# The Tanit image creates those targets before add_subdirectory. A sibling
+# package such as video.cpp does not, and must still be able to link the
+# path and string units.
+if(NOT TARGET pranav_glob)
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "fs[/\\\\]glob_paths\\.cpp$")
+endif()
+if(NOT picosha2_SOURCE_DIR)
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "installer[/\\\\]journal[/\\\\]journal\\.cpp$")
+endif()
+list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "net[/\\\\]http_url_stub\\.cpp$")
+if(NOT TARGET Boost::url)
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "net[/\\\\]uri\\.cpp$")
+  list(APPEND PM_COMMONS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/net/http_url_stub.cpp")
+endif()
+if(NOT TARGET CURL::libcurl)
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "net[/\\\\]url_fetch\\.cpp$")
+endif()
+if(NOT TARGET pm-libmagic)
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "media[/\\\\]probe\\.cpp$")
+endif()
+if(NOT TARGET sodium)
+  foreach(_drop IN ITEMS
+      "storage[/\\\\]secure_storage\\.cpp$"
+      "storage[/\\\\]asset_bundle\\.cpp$"
+      "security[/\\\\]ToolIdentity\\.cpp$")
+    list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
+  endforeach()
+endif()
+
 # A purged src/ is a legal configure. The host still links pm-commons-lib.
 if(PM_COMMONS_SOURCES)
   add_library(pm-commons-lib STATIC ${PM_COMMONS_SOURCES})
