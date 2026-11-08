@@ -1,13 +1,13 @@
-#include "cli_command_tree_doc.hpp"
+#include "cli_command_tree_hooks.hpp"
 
-#include "pm_image_register_cli.hpp"
-#include "cli/cli_ui_launch.hpp"
-#include "doc/cli_md_generator.hpp"
+#include "cli_md_generator.hpp"
 
 #include <CLI/CLI.hpp>
 
+#include <memory>
 #include <mutex>
 #include <sstream>
+#include <utility>
 
 namespace pm::cli {
 
@@ -15,30 +15,18 @@ namespace md = pm::cli_md;
 
 namespace {
 
-struct CachedTree {
+struct State {
+    std::mutex mutex;
+    CommandTreeHooks hooks;
+    std::unique_ptr<CLI::App> app;
     std::vector<CommandTreeDocNode> nodes;
-    CLI::App app{"__command_tree_doc__"};
-    PmImageCliState state{};
     bool built = false;
 };
 
-// Forward decl: defined below. Walks the CLI11 app into doc nodes.
-std::vector<CommandTreeDocNode> build_command_tree_doc(CLI::App& app);
-
-CachedTree& cached_tree()
+State& state()
 {
-    static CachedTree t;
-    static std::mutex m;
-    std::lock_guard<std::mutex> lock(m);
-    if (!t.built) {
-        // Build the full CLI11 grammar once. This populates subcommands and
-        // registered_cli_command_details() as a side effect; both are
-        // deterministic and idempotent across a process lifetime.
-        pm_image_register_cli(t.app, t.state, k_cmds_all);
-        t.nodes = build_command_tree_doc(t.app);
-        t.built = true;
-    }
-    return t;
+    static State s;
+    return s;
 }
 
 std::string command_option_primary_name(const CLI::Option* opt)
@@ -71,15 +59,17 @@ std::vector<CommandOptionInfo> collect_options(CLI::App* cmd)
     return out;
 }
 
-std::string build_usage(const std::string& path)
+std::string build_usage(const std::string& exe, const std::string& path)
 {
-    return std::string(pm::brand::k_exe_basename_cli_u8) + " " + path + " [OPTIONS]";
+    if (exe.empty())
+        return path + " [OPTIONS]";
+    return exe + " " + path + " [OPTIONS]";
 }
 
 md::AppendConfig doc_config()
 {
     md::AppendConfig cfg;
-    cfg.heading_base = 1;   // top command -> "##"
+    cfg.heading_base = 1;
     cfg.fixed_heading = 0;
     cfg.hr_between_siblings = true;
     return cfg;
@@ -94,13 +84,16 @@ std::string generate_markdown(CLI::App* sub, const std::string& path)
     return os.str();
 }
 
-void build_node(CommandTreeDocNode& node, CLI::App* sub, const std::string& path)
+void build_node(CommandTreeDocNode& node,
+                CLI::App* sub,
+                const std::string& path,
+                const std::string& exe)
 {
     node.id = path;
     node.label = sub ? sub->get_name() : path;
     node.group = sub ? sub->get_group() : std::string{};
     node.description = sub ? sub->get_description() : std::string{};
-    node.usage = build_usage(path);
+    node.usage = build_usage(exe, path);
     node.options = collect_options(sub);
     node.markdown = generate_markdown(sub, path);
     node.available = true;
@@ -109,54 +102,58 @@ void build_node(CommandTreeDocNode& node, CLI::App* sub, const std::string& path
             if (!child || child->get_name().empty())
                 continue;
             CommandTreeDocNode childNode;
-            build_node(childNode, child, path + " " + child->get_name());
+            build_node(childNode, child, path + " " + child->get_name(), exe);
             node.children.push_back(std::move(childNode));
         }
     }
 }
 
-std::vector<CommandTreeDocNode> build_command_tree_doc(CLI::App& app)
+std::string stub_markdown(const std::string& id, const std::string& label)
+{
+    std::ostringstream os;
+    os << "## " << id << "\n\n";
+    if (!label.empty())
+        os << label << ".\n\n";
+    return os.str();
+}
+
+std::vector<CommandTreeCatalogEntry> catalog_or_subcommands(CLI::App& app, const CommandTreeHooks& hooks)
+{
+    if (hooks.catalog)
+        return hooks.catalog();
+    std::vector<CommandTreeCatalogEntry> entries;
+    for (auto* child : app.get_subcommands({})) {
+        if (!child || child->get_name().empty())
+            continue;
+        CommandTreeCatalogEntry e;
+        e.id = child->get_name();
+        e.label = e.id;
+        entries.push_back(std::move(e));
+    }
+    return entries;
+}
+
+std::vector<CommandTreeDocNode> build_command_tree_doc(CLI::App& app, const CommandTreeHooks& hooks)
 {
     std::vector<CommandTreeDocNode> out;
-    const auto registered = pm::cli::registered_cli_commands();
-    for (const auto& c : registered) {
-        if (!c.available)
-            continue;
-        const std::string id = c.id ? c.id : "";
-        if (id.empty())
+    for (const auto& e : catalog_or_subcommands(app, hooks)) {
+        if (!e.available || e.id.empty())
             continue;
         CommandTreeDocNode node;
-        if (auto* sub = md::find_child_command(app, id)) {
-            build_node(node, sub, id);
-        } else if (pm::cli::is_cli_ui_launch_command(id)) {
-            // Synthetic "ui" launch command has no CLI11 subcommand.
-            node.id = id;
-            node.label = id;
-            node.group = "App Control";
-            node.description = c.label ? c.label : "";
-            node.usage = std::string(pm::brand::k_exe_basename_u8) + " --ui-preset main";
-            node.available = true;
-            std::ostringstream os;
-            os << "## " << id << "\n\n";
-            if (c.label && c.label[0])
-                os << c.label << ". ";
-            os << "Launch `" << pm::brand::k_exe_basename_u8
-               << "` with **no subcommand** (full reference: `info ui`).\n\n";
-            node.markdown = os.str();
-        } else {
-            // Registered but no live CLI11 subcommand: minimal stub.
-            node.id = id;
-            node.label = id;
-            node.group = "Other";
-            node.description = c.label ? c.label : "";
-            node.usage = build_usage(id);
-            node.available = true;
-            std::ostringstream os;
-            os << "## " << id << "\n\n";
-            if (c.label && c.label[0])
-                os << c.label << ".\n\n";
-            node.markdown = os.str();
+        if (!e.synthetic) {
+            if (auto* sub = md::find_child_command(app, e.id)) {
+                build_node(node, sub, e.id, hooks.exe_name);
+                out.push_back(std::move(node));
+                continue;
+            }
         }
+        node.id = e.id;
+        node.label = e.label.empty() ? e.id : e.label;
+        node.group = e.group.empty() ? "Other" : e.group;
+        node.description = !e.description.empty() ? e.description : e.label;
+        node.usage = !e.usage.empty() ? e.usage : build_usage(hooks.exe_name, e.id);
+        node.available = true;
+        node.markdown = !e.markdown.empty() ? e.markdown : stub_markdown(e.id, e.label);
         out.push_back(std::move(node));
     }
     return out;
@@ -197,11 +194,35 @@ nlohmann::json nodes_json(const std::vector<CommandTreeDocNode>& nodes)
     return arr;
 }
 
+const std::vector<CommandTreeDocNode>& build_locked(State& s)
+{
+    if (s.built)
+        return s.nodes;
+    s.app = std::make_unique<CLI::App>("__command_tree_doc__");
+    if (s.hooks.register_app)
+        s.hooks.register_app(*s.app);
+    s.nodes = build_command_tree_doc(*s.app, s.hooks);
+    s.built = true;
+    return s.nodes;
+}
+
 } // namespace
 
-const std::vector<CommandTreeDocNode>& command_tree_doc()
+void set_command_tree_hooks(CommandTreeHooks hooks)
 {
-    return cached_tree().nodes;
+    auto& s = state();
+    std::lock_guard<std::mutex> lock(s.mutex);
+    s.hooks = std::move(hooks);
+    s.app.reset();
+    s.nodes.clear();
+    s.built = false;
+}
+
+std::vector<CommandTreeDocNode> command_tree_doc()
+{
+    auto& s = state();
+    std::lock_guard<std::mutex> lock(s.mutex);
+    return build_locked(s);
 }
 
 nlohmann::json command_tree_doc_payload()

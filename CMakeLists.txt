@@ -71,8 +71,7 @@ foreach(_drop IN ITEMS
     "security[/\\\\]ConsentDelegateRegistry\\.cpp$"
     "security[/\\\\]ui[/\\\\]win[/\\\\]ConsentDlg\\.cpp$"
     "security[/\\\\]ui[/\\\\]win[/\\\\]ConsentDlg_i18n\\.cpp$"
-    "security[/\\\\]shim[/\\\\]pm_sb_shim\\.cpp$"
-    "cli[/\\\\]cli_command_tree_doc\\.cpp$")
+    "security[/\\\\]shim[/\\\\]pm_sb_shim\\.cpp$")
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
 endforeach()
 
@@ -125,6 +124,10 @@ endif()
 if(NOT TARGET pm-libmagic)
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "media[/\\\\]probe\\.cpp$")
 endif()
+if(NOT TARGET CLI11::CLI11)
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "cli[/\\\\]cli_md_generator\\.cpp$")
+  list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "cli[/\\\\]cli_command_tree_doc\\.cpp$")
+endif()
 if(NOT TARGET sodium)
   foreach(_drop IN ITEMS
       "storage[/\\\\]secure_storage\\.cpp$"
@@ -172,6 +175,9 @@ if(PM_COMMONS_SOURCES)
     endif()
     if(TARGET nlohmann_json::nlohmann_json)
       target_link_libraries(pm-commons-lib PUBLIC nlohmann_json::nlohmann_json)
+    endif()
+    if(TARGET CLI11::CLI11)
+      target_link_libraries(pm-commons-lib PUBLIC CLI11::CLI11)
     endif()
     if(picosha2_SOURCE_DIR)
       target_include_directories(pm-commons-lib PRIVATE "${picosha2_SOURCE_DIR}")
