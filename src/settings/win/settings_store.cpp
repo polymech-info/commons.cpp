@@ -2242,6 +2242,30 @@ static bool settings_load_disk_root(json& out, std::string& err)
     return parse_settings_root_or_err(raw, "settings_owner_watch", out, err);
 }
 
+// put_document writes settings.json.doc, .meta, and .sig, then commits
+// doc-index.json outside this folder. A watch callback that lands in that
+// window sees "document not found", which load_settings_profile_document
+// reports as an empty root. That empty root matches a cold cache and the
+// change is dropped, with no later event once the index commit finishes.
+static bool settings_load_disk_root_for_watch(json& out, std::string& err)
+{
+    for (int attempt = 0; attempt < 8; ++attempt) {
+        err.clear();
+        if (!settings_load_disk_root(out, err) || !out.is_object()) {
+            if (attempt + 1 == 8)
+                return false;
+        } else if (!(out.empty() && settings_profile_document_exists())) {
+            return true;
+        } else if (attempt + 1 == 8) {
+            return true;
+        }
+        if (g_settings_ipc_stop.load())
+            return false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+    return false;
+}
+
 static bool settings_root_body_equal(const json& a, const json& b)
 {
     if (!a.is_object() || !b.is_object())
@@ -2290,7 +2314,7 @@ static void settings_ipc_on_watch(std::vector<media::FileChange> batch)
 
     json disk;
     std::string err;
-    if (!settings_load_disk_root(disk, err) || !disk.is_object())
+    if (!settings_load_disk_root_for_watch(disk, err) || !disk.is_object())
         return;
     if (g_settings_disk_write_gen.load(std::memory_order_acquire) != write_gen)
         return;

@@ -32,7 +32,7 @@ Relevant code / build areas:
 - `src/core/library_utils.cpp` - explicit DLL loading helpers.
 - `packages/commons.cpp/src/process/stdio_child_runner.hpp` / `.cpp` - tool / sidecar process launch.
 - `src/security/*` - `SecurityGateway`, policy, grants, audit, AppContainer.
-- `src/win/assistant/uia_spy.*`, `src/win/inspect.cpp`,
+- `packages/win32/src/inspect/uia_spy.*`, `packages/win32/src/inspect/inspect.cpp`,
   `src/win/session_replay/*` - UIAutomation client / inspection surfaces.
 - `src/win/trial_protection.cpp` - license / trial checks.
 - `CMakeLists.txt` - feature flags, target sources, link options, third-party
@@ -319,7 +319,7 @@ a boundary.
   sensitive action.
 
 - [ ] **Gate our own UIA inspection tools.** Existing UIA client paths such as
-  `src/win/assistant/uia_spy.*`, `src/win/inspect.cpp`, assistant app inspection,
+  `packages/win32/src/inspect/uia_spy.*`, `packages/win32/src/inspect/inspect.cpp`, assistant app inspection,
   and session replay should also enter `SecurityGateway`. Reading another app's UI
   tree can expose secrets, so it needs profile policy, user consent, and audit.
 
