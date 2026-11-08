@@ -1096,7 +1096,7 @@ inline constexpr const char* k_llm_write_script_exts[] = {
 
 // Absolute path prefixes that must not receive files from LLM write tools.
 // Null-terminated.  Windows drive letter 'C:' is retargeted at runtime to match
-// the path under test (same rule as sensitive_paths.h).
+// the path under test (Windows drive letter follows the path being checked).
 inline constexpr const char* k_llm_write_blocked_abs_prefixes[] = {
 #if defined(_WIN32)
     "C:\\Windows\\",
