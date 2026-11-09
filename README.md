@@ -59,13 +59,7 @@ Put that inside the feature flag that owns the caller. Link every host target th
 
 The host includes `pm/commons/commons.hpp` (or one header under `pm/commons/`). It passes paths, clocks, and a process-alive hook for scheduler claims. It does not copy the jail, the matcher, or the URI checks back into `src/`.
 
-Sibling packages in this tree (`packages/audio.cpp`, `packages/video.cpp`) can opt in without becoming a dependency of a standalone checkout:
-
-```cmake
-option(PM_AUDIO_LINK_COMMONS "Link sibling packages/commons.cpp" OFF)
-```
-
-`PM_VIDEO_LINK_COMMONS` is the same switch. Both default off. When on, they include `packages/commons.cpp/cmake/host-layout.cmake` and link `pm-commons-lib`. A clone of audio or video alone does not fetch commons, JSON, or a Windows SDK through this package.
+Search, audio, video, and a standalone image link `pm::commons` when this target is already in the build, or via `find_package(pm-commons CONFIG)`. They do not `add_subdirectory` this package. A clone of audio or video alone still configures without commons.
 
 `npm run build:cpp:commons` and `npm run test:pm-commons` from the repo root exercise this package without building tanit.
 
