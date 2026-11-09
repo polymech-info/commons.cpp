@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(nlohmann_json)
+
+include("${CMAKE_CURRENT_LIST_DIR}/pm-commons-targets.cmake")
+
+if(TARGET pm::commons)
+  set_property(TARGET pm::commons APPEND PROPERTY INTERFACE_LINK_LIBRARIES nlohmann_json::nlohmann_json)
+endif()
+
+check_required_components(pm-commons)

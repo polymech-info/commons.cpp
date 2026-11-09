@@ -89,17 +89,20 @@ if(PM_COMMONS_LEAN)
   endforeach()
 endif()
 
-option(PM_COMMONS_HOST_SINGLETONS "Host compiles host/services.cpp once per process" OFF)
-if(PM_COMMONS_HOST_SINGLETONS)
+# host/services.cpp is the process registry. A host that adds this package
+# compiles that file itself. A standalone build keeps it in the library.
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "host[/\\\\]services\\.cpp$")
 endif()
 
 # The profile TUs stay on the host targets. tanit-security compiles the Windows
 # store with FEATURE_COMMAND_IPC_NEXT=0; pm-media compiles it with the app flags.
-# file_store.cpp is the Store interface and is part of this library.
+# file_store.cpp is the Store interface and is part of this library when a host
+# adds the package. A sibling that only needs paths and strings turns it off.
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "settings[/\\\\].*\\.cpp$")
+option(PM_COMMONS_WITH_FILE_STORE "Compile settings/file_store.cpp into pm-commons-lib" ON)
 set(_PM_COMMONS_FILE_STORE "${CMAKE_CURRENT_SOURCE_DIR}/src/settings/file_store.cpp")
-if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND EXISTS "${_PM_COMMONS_FILE_STORE}")
+if(PM_COMMONS_WITH_FILE_STORE AND NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND EXISTS "${_PM_COMMONS_FILE_STORE}")
   list(APPEND PM_COMMONS_SOURCES "${_PM_COMMONS_FILE_STORE}")
 endif()
 
@@ -138,6 +141,19 @@ if(NOT TARGET sodium)
   endforeach()
 endif()
 
+# Public headers include nlohmann/json.hpp. A standalone install fetches it
+# and installs the headers with this prefix. The host already has the target.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND NOT TARGET nlohmann_json::nlohmann_json)
+  include(FetchContent)
+  set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+  set(JSON_Install ON CACHE BOOL "" FORCE)
+  FetchContent_Declare(nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE)
+  FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
 # A purged src/ is a legal configure. The host still links pm-commons-lib.
 if(PM_COMMONS_SOURCES)
   add_library(pm-commons-lib STATIC ${PM_COMMONS_SOURCES})
@@ -145,8 +161,9 @@ if(PM_COMMONS_SOURCES)
   # #include "fs/mask.hpp", "net/uri.hpp", "string/string_utils.hpp".
   target_include_directories(pm-commons-lib
     PUBLIC
-      "${CMAKE_CURRENT_SOURCE_DIR}/include"
-      "${CMAKE_CURRENT_SOURCE_DIR}/src")
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+      $<INSTALL_INTERFACE:include>)
   target_compile_features(pm-commons-lib PUBLIC cxx_std_20)
   if(WIN32)
     target_link_libraries(pm-commons-lib PUBLIC ws2_32)
@@ -167,6 +184,13 @@ if(PM_COMMONS_SOURCES)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     target_include_directories(pm-commons-lib PRIVATE "${CMAKE_SOURCE_DIR}/src")
     target_compile_definitions(pm-commons-lib PRIVATE POLYMECH_STATIC_BUILD=1)
+  endif()
+  if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND TARGET nlohmann_json::nlohmann_json)
+    target_link_libraries(pm-commons-lib PUBLIC
+      $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>)
+  endif()
+  if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND TARGET logger)
+    target_link_libraries(pm-commons-lib PUBLIC $<BUILD_INTERFACE:logger>)
   endif()
   # Host facts arrive through host/services.hpp. The settings store stays on the host.
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -274,4 +298,42 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
   else()
     target_compile_options(pm-commons PRIVATE -Wall -Wextra)
   endif()
+endif()
+
+if(TARGET pm-commons-lib AND NOT TARGET pm::commons)
+  add_library(pm::commons ALIAS pm-commons-lib)
+endif()
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND TARGET pm-commons-lib)
+  include(GNUInstallDirs)
+  include(CMakePackageConfigHelpers)
+  set_target_properties(pm-commons-lib PROPERTIES EXPORT_NAME commons)
+  install(TARGETS pm-commons-lib
+    EXPORT pm-commons-targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+  endif()
+  configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/pm-commons-config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/pm-commons-config.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pm-commons)
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/pm-commons-config-version.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+  install(EXPORT pm-commons-targets
+    FILE pm-commons-targets.cmake
+    NAMESPACE pm::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pm-commons)
+  install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/pm-commons-config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/pm-commons-config-version.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pm-commons)
 endif()
