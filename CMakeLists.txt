@@ -34,6 +34,9 @@ list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "performance[/\\\\]counters_win32\\
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "controllers[/\\\\]hotkeys\\.cpp$")
 # kainjow/Mustache is fetched by the host image.
 list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "mustache_render\\.cpp$")
+# anydoc.dll is a host link (FEATURE_COMMAND_MARKDOWN). Android has another loader.
+list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "markdown[/\\\\]markdown_win\\.cpp$")
+
 # Host image compiles these. They need branding, the settings profile, or Win32
 # headers that this static library does not set up on every platform.
 foreach(_drop IN ITEMS
