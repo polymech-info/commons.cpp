@@ -354,7 +354,8 @@ inline bool is_viewer_spreadsheet_ext(std::wstring_view ext)
 inline bool is_viewer_officecli_ext(std::wstring_view ext)
 {
 #if defined(FEATURE_OFFICECLI_VIEWER) && FEATURE_OFFICECLI_VIEWER
-    return ext == L".docx" || ext == L".xlsx" || ext == L".pptx";
+    return ext == L".docx" || ext == L".xlsx" || ext == L".pptx"
+        || ext == L".odt" || ext == L".ods" || ext == L".odp";
 #else
     (void)ext;
     return false;
