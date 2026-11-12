@@ -3,10 +3,14 @@
 #include "net/url_fetch.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
+#include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <regex>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #if defined(_WIN32)
@@ -195,10 +199,35 @@ bool pre_checks_vfs(const std::string &input, std::string &err) {
     return true;
 }
 
+void utf8_prefix(std::string &s, std::size_t max_bytes) {
+    if (s.size() <= max_bytes) return;
+    std::size_t i = 0;
+    std::size_t last_ok = 0;
+    while (i < s.size() && i < max_bytes) {
+        const unsigned char c = static_cast<unsigned char>(s[i]);
+        std::size_t need = 1;
+        if ((c & 0x80) == 0) need = 1;
+        else if ((c & 0xe0) == 0xc0) need = 2;
+        else if ((c & 0xf0) == 0xe0) need = 3;
+        else if ((c & 0xf8) == 0xf0) need = 4;
+        else break;
+        if (i + need > s.size() || i + need > max_bytes) break;
+        bool ok = true;
+        for (std::size_t k = 1; k < need; ++k) {
+            if ((static_cast<unsigned char>(s[i + k]) & 0xc0) != 0x80) {
+                ok = false;
+                break;
+            }
+        }
+        if (!ok) break;
+        i += need;
+        last_ok = i;
+    }
+    s.resize(last_ok);
+}
+
 void utf8_truncate_255(std::string &s) {
-    if (s.size() <= 255) return;
-    s.resize(255);
-    while (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xc0) == 0x80) s.pop_back();
+    utf8_prefix(s, 255);
 }
 
 static void trim_segs_edges(std::string &seg) {
@@ -544,6 +573,187 @@ bool validate_url_spec_for_input_selection(const std::string &raw, std::string &
         return false;
     }
     return true;
+}
+
+namespace {
+
+bool inside_root(const fs::path& root, const fs::path& full)
+{
+    std::string root_s = path_to_generic_utf8(root);
+    std::string full_s = path_to_generic_utf8(full);
+#if defined(_WIN32)
+    auto fold = [](std::string text) {
+        for (char& c : text)
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        return text;
+    };
+    root_s = fold(std::move(root_s));
+    full_s = fold(std::move(full_s));
+#endif
+    if (full_s == root_s)
+        return true;
+    if (full_s.size() <= root_s.size() || full_s.compare(0, root_s.size(), root_s) != 0)
+        return false;
+    return root_s.back() == '/' || full_s[root_s.size()] == '/';
+}
+
+} // namespace
+
+std::filesystem::path confine_to_root(const std::filesystem::path& root,
+                                      std::string_view key,
+                                      std::string& err)
+{
+    err.clear();
+    if (root.empty() || key.empty() || key.front() == '/' || key.front() == '\\'
+        || key.find(':') != std::string_view::npos || key.find('\\') != std::string_view::npos) {
+        err = "cache path is invalid";
+        return {};
+    }
+    const fs::path as_path = path_from_utf8(std::string(key));
+    if (as_path.is_absolute()) {
+        err = "cache path is invalid";
+        return {};
+    }
+    std::string key_err;
+    const std::string clean = sanitize_subpath(std::string(key), key_err);
+    if (!key_err.empty() || clean.empty() || clean.size() > 4096) {
+        err = "cache path is invalid";
+        return {};
+    }
+    std::error_code ec;
+    const fs::path base = fs::weakly_canonical(root, ec);
+    if (ec || base.empty()) {
+        err = "cache path is invalid";
+        return {};
+    }
+    fs::path cursor = base;
+    std::size_t start = 0;
+    while (start < clean.size()) {
+        const auto slash = clean.find('/', start);
+        const auto seg = clean.substr(start, slash == std::string::npos ? std::string::npos : slash - start);
+        cursor /= path_from_utf8(seg);
+        ec.clear();
+        const bool link = fs::is_symlink(cursor, ec);
+        if (link) {
+            err = "cache path is invalid";
+            return {};
+        }
+        if (ec && ec.default_error_condition() != std::errc::no_such_file_or_directory) {
+            err = "cache path is invalid";
+            return {};
+        }
+        ec.clear();
+        if (slash == std::string::npos)
+            break;
+        start = slash + 1;
+    }
+    const fs::path full = fs::weakly_canonical(cursor, ec);
+    if (ec || full.empty() || !inside_root(base, full)) {
+        err = "cache path is invalid";
+        return {};
+    }
+    return full;
+}
+
+std::string vfs_object_filename(std::string_view scope, std::string_view mount, std::string_view relative)
+{
+    std::uint64_t hash = 14695981039346656037ull;
+    auto mix = [&](std::string_view text) {
+        for (unsigned char c : text) {
+            hash ^= c;
+            hash *= 1099511628211ull;
+        }
+        hash ^= 0xFFu;
+        hash *= 1099511628211ull;
+    };
+    mix(scope);
+    mix(mount);
+    mix(relative);
+    static const char* digits = "0123456789abcdef";
+    std::string hex(16, '0');
+    for (int i = 15; i >= 0; --i) {
+        hex[static_cast<std::size_t>(i)] = digits[hash & 0xF];
+        hash >>= 4;
+    }
+    std::string leaf(relative);
+    const auto slash = leaf.find_last_of('/');
+    if (slash != std::string::npos)
+        leaf = leaf.substr(slash + 1);
+    std::string safe = sanitize_filename(leaf, "_");
+    if (safe.empty() || safe == "." || safe == "..")
+        safe = "file";
+    utf8_prefix(safe, 40);
+    return hex + "-" + safe;
+}
+
+bool vfs_mount_name_ok(std::string_view name)
+{
+    if (name.empty() || name.size() > 64 || name == "." || name == "..")
+        return false;
+    for (unsigned char c : name) {
+        if (c < 0x20 || c == 0x7F || c == '/' || c == '\\' || c == ':')
+            return false;
+    }
+    return true;
+}
+
+std::filesystem::path make_cache_temp(const std::filesystem::path& directory)
+{
+    static std::atomic<std::uint64_t> seq{0};
+    const auto n = seq.fetch_add(1, std::memory_order_relaxed);
+    const auto ticks = static_cast<std::uint64_t>(
+        std::chrono::steady_clock::now().time_since_epoch().count());
+    auto hex = [](std::uint64_t value) {
+        static const char* digits = "0123456789abcdef";
+        std::string out(16, '0');
+        for (int i = 15; i >= 0; --i) {
+            out[static_cast<std::size_t>(i)] = digits[value & 0xF];
+            value >>= 4;
+        }
+        return out;
+    };
+    return directory / ("tmp-" + hex(ticks) + "-" + hex(n));
+}
+
+bool publish_file(const std::filesystem::path& completed_temp,
+                  const std::filesystem::path& destination,
+                  std::string& err)
+{
+    err.clear();
+    std::error_code ec;
+    const fs::path from_dir = fs::weakly_canonical(completed_temp.parent_path(), ec);
+    if (ec || from_dir.empty()) {
+        err = "could not publish the downloaded file";
+        return false;
+    }
+    const fs::path to_dir = fs::weakly_canonical(destination.parent_path(), ec);
+    if (ec || to_dir != from_dir) {
+        err = "could not publish the downloaded file";
+        return false;
+    }
+#if defined(_WIN32)
+    if (!MoveFileExW(completed_temp.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+        err = "could not publish the downloaded file";
+        return false;
+    }
+    return true;
+#else
+    fs::rename(completed_temp, destination, ec);
+    if (ec) {
+        err = "could not publish the downloaded file";
+        return false;
+    }
+    return true;
+#endif
+}
+
+void discard_file(const std::filesystem::path& incoming)
+{
+    std::error_code ec;
+    fs::remove(incoming, ec);
+    fs::path part = incoming;
+    part += ".part";
+    fs::remove(part, ec);
 }
 
 } // namespace media::path

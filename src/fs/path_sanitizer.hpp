@@ -35,8 +35,8 @@ inline std::string path_to_generic_utf8(const std::filesystem::path& path)
 std::string sanitize_subpath(const std::string &input, std::string &err);
 
 /**
- * After `sanitize_subpath`. Drops ASCII controls and `<>:"/\|?*`.
- * Unicode, apostrophes, and other printable characters stay.
+ * Filename cleaner used after `sanitize_subpath`. Drops ASCII controls and `<>:"/\|?*`.
+ * It does not reject `..` and is not a path authorization check.
  */
 std::string sanitize_write_path(const std::string &subpath, std::string &err, bool is_directory = false);
 
@@ -85,5 +85,38 @@ bool validate_path_spec_for_input_selection(const std::string &raw, std::string 
  * you may want to expand (delegate to @ref is_http_url in callers, or stricter here later).
  */
 bool validate_url_spec_for_input_selection(const std::string &raw, std::string &err);
+
+/**
+ * Join `root` and a relative key. Rejects an absolute key, `..`, and any symlink
+ * along the key. The result stays inside the canonical root.
+ */
+std::filesystem::path confine_to_root(const std::filesystem::path& root,
+                                      std::string_view key,
+                                      std::string& err);
+
+/**
+ * One cache filename for a remote object. `scope` is the server and account, not a token.
+ * The leaf is a display suffix, not the identity.
+ */
+std::string vfs_object_filename(std::string_view scope,
+                                std::string_view mount,
+                                std::string_view relative);
+
+/** Mount token: length, separators, and control characters including DEL. */
+bool vfs_mount_name_ok(std::string_view name);
+
+/** Unique temporary path in `directory`. The caller creates and deletes the file. */
+std::filesystem::path make_cache_temp(const std::filesystem::path& directory);
+
+/**
+ * Replace `destination` with a completed temporary file in the same directory.
+ * Does not delete `completed_temp` when the replace fails.
+ */
+bool publish_file(const std::filesystem::path& completed_temp,
+                  const std::filesystem::path& destination,
+                  std::string& err);
+
+/** Remove a temporary download and its `.part` file. Does not touch `dest`. */
+void discard_file(const std::filesystem::path& incoming);
 
 } // namespace media::path
