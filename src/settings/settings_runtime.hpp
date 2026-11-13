@@ -154,6 +154,28 @@ bool cli_cwd_explicit();
 /// Uses process cwd only when @ref cli_cwd_explicit; otherwise @ref effective_temp_dir.
 std::filesystem::path implicit_tool_output_base();
 
+/// Public user video folder. Empty when this host keeps generated video next to other tool output.
+std::filesystem::path user_video_directory();
+
+/// Public user image folder. Empty when this host keeps generated pictures next to the source.
+std::filesystem::path user_image_directory();
+
+/// When @p dest is in @ref user_image_directory, the host publishes @p bytes there.
+/// Returns false and leaves @p err empty when this host does not own @p dest.
+/// On success @p written is the path to open.
+bool host_publish_image(const std::filesystem::path& dest,
+                        const std::vector<std::uint8_t>& bytes,
+                        std::string& written,
+                        std::string& err);
+
+/// When @p dest is in @ref user_video_directory, the host publishes @p bytes there.
+/// Returns false and leaves @p err empty when this host does not own @p dest.
+/// On success @p written is the path to open.
+bool host_publish_video(const std::filesystem::path& dest,
+                        const std::vector<std::uint8_t>& bytes,
+                        std::string& written,
+                        std::string& err);
+
 /// Fill API key / base URL from `providers[provider]`. Provider/model selection must already be
 /// explicit from chat settings or command/tool overrides; provider rows are credential rows only.
 void merge_provider_credentials(const std::string& provider,

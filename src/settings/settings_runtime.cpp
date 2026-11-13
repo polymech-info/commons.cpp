@@ -537,6 +537,32 @@ std::filesystem::path implicit_tool_output_base() {
     return effective_temp_dir();
 }
 
+std::filesystem::path user_video_directory() {
+    return {};
+}
+
+std::filesystem::path user_image_directory() {
+    return {};
+}
+
+bool host_publish_image(const std::filesystem::path&,
+                        const std::vector<std::uint8_t>&,
+                        std::string& written,
+                        std::string& err) {
+    written.clear();
+    err.clear();
+    return false;
+}
+
+bool host_publish_video(const std::filesystem::path&,
+                        const std::vector<std::uint8_t>&,
+                        std::string& written,
+                        std::string& err) {
+    written.clear();
+    err.clear();
+    return false;
+}
+
 void merge_provider_credentials(const std::string& provider,
                                 bool dry_run,
                                 std::string& api_key,
