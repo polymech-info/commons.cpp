@@ -67,9 +67,27 @@ std::string utc_expiry_default() {
     return os.str();
 }
 
+// ofstream/ifstream(fs::path) does not open files under the Android app dir.
+void open_binary_in(std::ifstream& in, const fs::path& path) {
+#if defined(__ANDROID__)
+    in.open(path.c_str(), std::ios::binary);
+#else
+    in.open(path, std::ios::binary);
+#endif
+}
+
+void open_binary_out(std::ofstream& out, const fs::path& path) {
+#if defined(__ANDROID__)
+    out.open(path.c_str(), std::ios::binary | std::ios::trunc);
+#else
+    out.open(path, std::ios::binary | std::ios::trunc);
+#endif
+}
+
 bool read_bytes(const fs::path& path, std::vector<std::uint8_t>& out, std::string& err) {
     out.clear();
-    std::ifstream in(path, std::ios::binary);
+    std::ifstream in;
+    open_binary_in(in, path);
     if (!in.is_open()) {
         err = "failed to open file: " + path.string();
         return false;
@@ -101,7 +119,8 @@ bool write_bytes_atomic(const fs::path& path, const std::vector<std::uint8_t>& d
 
     const fs::path tmp = path.string() + ".tmp";
     {
-        std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
+        std::ofstream out;
+        open_binary_out(out, tmp);
         if (!out.is_open()) {
             err = "failed to open temp file: " + tmp.string();
             return false;
@@ -174,7 +193,8 @@ bool load_index(const StoragePaths& paths, json& out, std::string& err) {
     out = empty_index();
     if (!fs::exists(paths.uri_index))
         return true;
-    std::ifstream in(paths.uri_index, std::ios::binary);
+    std::ifstream in;
+    open_binary_in(in, paths.uri_index);
     if (!in.is_open()) {
         err = "failed to open URI index";
         return false;
@@ -200,7 +220,8 @@ bool load_doc_index(const StoragePaths& paths, json& out, std::string& err) {
     out = empty_doc_index();
     if (!fs::exists(paths.doc_index))
         return true;
-    std::ifstream in(paths.doc_index, std::ios::binary);
+    std::ifstream in;
+    open_binary_in(in, paths.doc_index);
     if (!in.is_open()) {
         err = "failed to open document index";
         return false;
@@ -745,7 +766,8 @@ bool ensure_wrapped_random_key(const fs::path& path, std::size_t bytes, std::str
 }
 
 bool read_json_file(const fs::path& path, json& out, std::string& err) {
-    std::ifstream in(path, std::ios::binary);
+    std::ifstream in;
+    open_binary_in(in, path);
     if (!in.is_open()) {
         err = "failed to open JSON file: " + path.string();
         return false;

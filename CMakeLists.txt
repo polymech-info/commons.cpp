@@ -54,8 +54,9 @@ foreach(_drop IN ITEMS
   list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "${_drop}")
 endforeach()
 
-# Android has no libsodium, libmagic, or Win32 security backends. Probe is
-# stubbed in the Android host. URI parsing still needs Boost, fetched by the app.
+# The phone agent lists secure_storage.cpp itself and links libsodium.
+# This library still drops that unit: a second copy would duplicate the symbols.
+# Probe is stubbed in the Android host. URI parsing still needs Boost.
 if(ANDROID)
   foreach(_drop IN ITEMS
       "storage[/\\\\]secure_storage\\.cpp$"
