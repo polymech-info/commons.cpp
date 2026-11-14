@@ -60,6 +60,7 @@ struct Run {
     std::atomic<bool> terminated{false};
     std::atomic<bool> child_reported{false};
     FinishNotify finish;
+    media::process::ClosePolicy closePolicy = media::process::ClosePolicy::Default;
 };
 
 bool args_look_like_xblox(const RunOptions& opt)
@@ -293,6 +294,7 @@ std::uint64_t start_reserved(const RunOptions& opt, std::uint64_t run_id,
     run->commandId = opt.commandId;
     run->startedUnixMs = started_unix_ms;
     run->finish    = resolve_run_finish(opt);
+    run->closePolicy = opt.closePolicy;
     stamp_run_notify_env(po, run->finish);
 
     std::weak_ptr<Run> weak_run = run;
@@ -617,12 +619,32 @@ std::size_t Runner::cancel_all()
     {
         std::scoped_lock lk(state().mu);
         ids.reserve(state().runs.size());
-        for (auto& [rid, _] : state().runs) ids.push_back(rid);
-        for (auto& [_, queue] : state().pending) {
-            for (auto& item : queue)
-                pending.push_back(std::move(item));
+        for (auto& [rid, run] : state().runs) {
+            // persist outlives the window. CloseWithOwner and the bind-to-parent
+            // default are the runs WM_CLOSE is meant to stop.
+            if (run->closePolicy == media::process::ClosePolicy::Persist) {
+                logger::info("[cmd_run] leave running on shutdown id=" + run->commandId
+                    + " pid=" + std::to_string(run->pid));
+                continue;
+            }
+            ids.push_back(rid);
         }
-        state().pending.clear();
+        for (auto pending_it = state().pending.begin();
+             pending_it != state().pending.end();) {
+            auto& queue = pending_it->second;
+            for (auto it = queue.begin(); it != queue.end();) {
+                if (it->options.closePolicy == media::process::ClosePolicy::Persist) {
+                    ++it;
+                    continue;
+                }
+                pending.push_back(std::move(*it));
+                it = queue.erase(it);
+            }
+            if (queue.empty())
+                pending_it = state().pending.erase(pending_it);
+            else
+                ++pending_it;
+        }
     }
     std::size_t n = 0;
     for (auto rid : ids) if (cancel(rid)) ++n;

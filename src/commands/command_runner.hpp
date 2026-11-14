@@ -160,9 +160,9 @@ public:
     std::size_t stop_by_command_id(const std::string& commandId,
                                    unsigned grace_ms = 8000);
 
-    /// Hard-terminate every active run. Call on host shutdown (e.g. the main
-    /// window's WM_CLOSE) so launcher/ribbon custom commands don't survive as
-    /// orphans after the UI closes. Returns the number of runs terminated.
+    /// Hard-terminate active runs that are bound to this process. `Persist`
+    /// runs are left running. Call on host shutdown (e.g. the main window's
+    /// WM_CLOSE). Returns the number of runs terminated.
     std::size_t cancel_all();
 
     /// Pulsing-state queries. Constant-time copies under a short lock — safe
