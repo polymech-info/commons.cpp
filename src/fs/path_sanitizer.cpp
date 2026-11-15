@@ -419,7 +419,7 @@ std::string normalize_local_path(const std::string &input, bool force) {
         return s;
     collapse_duplicate_separators(s);
     try {
-        return path_to_utf8(fs::u8path(s).lexically_normal());
+        return path_to_utf8(path_from_utf8(s).lexically_normal());
     } catch (...) {
         return force ? std::string{} : s;
     }

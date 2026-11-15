@@ -17,6 +17,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "fs/path_sanitizer.hpp"
 #include "logging/pm_log.hpp"
 
 #if defined(_WIN32) && !defined(PM_IMAGE_CLI_ONLY)
@@ -126,7 +127,7 @@ inline bool shell_path_is_builtin(std::string_view pathOrUrl)
     if (exe.empty())
         return false;
     try {
-        return path_is_under(std::filesystem::u8path(std::string(pathOrUrl)), exe);
+        return path_is_under(media::path::path_from_utf8(pathOrUrl), exe);
     } catch (...) {
         return false;
     }
@@ -139,7 +140,7 @@ inline bool bind_document_target(ToolRequest& req, ResourceTarget& tgt,
         return false;
     std::filesystem::path p;
     try {
-        p = std::filesystem::u8path(std::string(pagePath));
+        p = media::path::path_from_utf8(pagePath);
     } catch (...) {
         return false;
     }

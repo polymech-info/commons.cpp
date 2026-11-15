@@ -1,10 +1,6 @@
 #pragma once
 // Declarations only. Definitions are fs/path_sanitizer.cpp in this package.
 
-#if defined(_MSC_VER)
-#define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING 1
-#endif
-
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -19,7 +15,16 @@ inline std::string path_to_utf8(const std::filesystem::path& path)
 
 inline std::filesystem::path path_from_utf8(std::string_view text)
 {
+    // char8_t keeps this UTF-8. A char constructor uses the Windows ANSI code page.
+    // Android native files are C++17, where char8_t is not a type and u8path is not deprecated.
+    if (text.empty())
+        return {};
+#if defined(__cpp_char8_t)
+    return std::filesystem::path(std::u8string_view(
+        reinterpret_cast<const char8_t*>(text.data()), text.size()));
+#else
     return std::filesystem::u8path(text.begin(), text.end());
+#endif
 }
 
 inline std::string path_to_generic_utf8(const std::filesystem::path& path)

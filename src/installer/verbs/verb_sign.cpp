@@ -15,6 +15,7 @@
 #include "installer/verb_registry.hpp"
 #include "installer/resolve.hpp"
 #include "installer/host.hpp"
+#include "fs/path_sanitizer.hpp"
 #include "logging/pm_log.hpp"
 #include "model/resource_types.hpp"
 #include "storage/secure_storage.hpp"
@@ -225,7 +226,7 @@ void run_sign_like(const VerbContext& ctx, PackageResult& result, bool encrypt_m
         req.allow_plaintext_seed = !encrypt_mode;
         req.data                 = std::move(bytes);
 
-        const pm::storage::StoragePaths paths = pm::storage::resolve_storage_paths(fs::u8path(config_s));
+        const pm::storage::StoragePaths paths = pm::storage::resolve_storage_paths(media::path::path_from_utf8(config_s));
         std::string layout_err;
         if (!pm::storage::ensure_storage_layout(paths, layout_err)) {
             result.ok          = false;
@@ -268,7 +269,7 @@ void run_sign_like(const VerbContext& ctx, PackageResult& result, bool encrypt_m
             }
         }
 
-        stores.insert(fs::u8path(config_s).lexically_normal().string());
+        stores.insert(media::path::path_from_utf8(config_s).lexically_normal().string());
         if (opt.delete_source)
             signed_sources.push_back(file_s);
         ++signed_count;
@@ -277,7 +278,7 @@ void run_sign_like(const VerbContext& ctx, PackageResult& result, bool encrypt_m
     // Strip private keys from every store touched (once, after all files).
     if (!ctx.dry_run && opt.strip_keys) {
         for (const auto& dir_s : stores) {
-            const pm::storage::StoragePaths paths = pm::storage::resolve_storage_paths(fs::u8path(dir_s));
+            const pm::storage::StoragePaths paths = pm::storage::resolve_storage_paths(media::path::path_from_utf8(dir_s));
             std::error_code ec;
             fs::remove(paths.local_signing_key, ec);
             ec.clear();

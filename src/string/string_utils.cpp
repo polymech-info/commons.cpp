@@ -29,7 +29,7 @@ std::wstring normalize_selection_path(const std::wstring& path)
     const std::string normalized = media::path::normalize_local_path(utf8, true);
     if (normalized.empty())
         return path;
-    return std::filesystem::u8path(normalized).wstring();
+    return media::path::path_from_utf8(normalized).wstring();
 #endif
 }
 

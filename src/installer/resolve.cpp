@@ -4,6 +4,7 @@
 #include "installer/vfs/vfs_spec.hpp"
 
 #include "fs/glob_paths.hpp"
+#include "fs/path_sanitizer.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -219,9 +220,9 @@ std::string resolve_manifest_dependency_path(const std::string& raw,
     }
 
     std::error_code ec;
-    fs::path p = fs::u8path(resolved);
+    fs::path p = media::path::path_from_utf8(resolved);
     if (!p.is_absolute()) {
-        fs::path base = fs::u8path(parent_manifest_path).parent_path();
+        fs::path base = media::path::path_from_utf8(parent_manifest_path).parent_path();
         if (base.empty())
             base = ".";
         p = base / p;
