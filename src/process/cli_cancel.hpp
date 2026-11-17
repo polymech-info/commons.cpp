@@ -5,6 +5,7 @@
 // between I/O-bound steps and yield briefly so the handler can run.
 //
 #include <atomic>
+#include <chrono>
 #include <functional>
 #include <thread>
 
@@ -47,6 +48,30 @@ public:
 private:
     std::function<bool()> previous_;
 };
+
+/// True while this thread's HTTP client is still connected.
+/// No probe installed means connected. The server turn installs one so a
+/// dropped SSE stream ends consent, ask, and other parks that poll
+/// cancel_requested().
+[[nodiscard]] bool turn_client_connected() noexcept;
+
+class ScopedTurnClientProbe {
+public:
+    /// @p connected returns false when the response socket is gone.
+    explicit ScopedTurnClientProbe(std::function<bool()> connected);
+    ~ScopedTurnClientProbe();
+    ScopedTurnClientProbe(const ScopedTurnClientProbe&)            = delete;
+    ScopedTurnClientProbe& operator=(const ScopedTurnClientProbe&) = delete;
+
+private:
+    std::function<bool()> previous_;
+};
+
+/// Bound a server turn. Consent, ask, and any other park that polls this
+/// ends when the clock passes @p deadline. Nestable.
+void push_turn_deadline(std::chrono::steady_clock::time_point deadline);
+void pop_turn_deadline() noexcept;
+[[nodiscard]] bool turn_deadline_reached() noexcept;
 
 /// Programmatically request cancellation of the current CLI work, exactly as if
 /// the user had pressed Ctrl+C. Sets the shared flag and fires listeners on the

@@ -43,6 +43,8 @@ static std::atomic<bool> g_watcher_started{false};
 // must not be killed by a stale global flag left by an unrelated cancel.
 static thread_local int tl_ignore_global_cancel = 0;
 static thread_local std::function<bool()> tl_cancel_predicate;
+static thread_local std::function<bool()> tl_turn_client_probe;
+static thread_local std::vector<std::chrono::steady_clock::time_point> tl_turn_deadlines;
 // Guard against reentrant cancel_requested() while evaluating
 // tl_cancel_predicate. Agent turns install a predicate that may call back into
 // xblox/io.cancelled(), whose ExecutionOptions.cancel_requested polls
@@ -98,6 +100,46 @@ ScopedCancelPredicate::ScopedCancelPredicate(std::function<bool()> predicate)
 ScopedCancelPredicate::~ScopedCancelPredicate()
 {
     tl_cancel_predicate = std::move(previous_);
+}
+
+bool turn_client_connected() noexcept
+{
+    if (!tl_turn_client_probe)
+        return true;
+    try {
+        return tl_turn_client_probe();
+    } catch (...) {
+        return true;
+    }
+}
+
+ScopedTurnClientProbe::ScopedTurnClientProbe(std::function<bool()> connected)
+    : previous_(std::move(tl_turn_client_probe))
+{
+    tl_turn_client_probe = std::move(connected);
+}
+
+ScopedTurnClientProbe::~ScopedTurnClientProbe()
+{
+    tl_turn_client_probe = std::move(previous_);
+}
+
+void push_turn_deadline(std::chrono::steady_clock::time_point deadline)
+{
+    tl_turn_deadlines.push_back(deadline);
+}
+
+void pop_turn_deadline() noexcept
+{
+    if (!tl_turn_deadlines.empty())
+        tl_turn_deadlines.pop_back();
+}
+
+bool turn_deadline_reached() noexcept
+{
+    if (tl_turn_deadlines.empty())
+        return false;
+    return std::chrono::steady_clock::now() >= tl_turn_deadlines.back();
 }
 
 void request_cancel() noexcept

@@ -194,7 +194,12 @@ nlohmann::json wait_stream_consent(const std::string& req_id, const std::string&
     for (;;) {
         if (future.wait_for(std::chrono::milliseconds(100)) == std::future_status::ready)
             break;
-        if (media::cli::cancel_requested()) {
+        const bool timed_out = media::cli::turn_deadline_reached();
+        const bool client_gone = !media::cli::turn_client_connected();
+        if (media::cli::cancel_requested() || timed_out || client_gone) {
+            logger::warn(std::string("[consent-stream] ")
+                         + (timed_out ? "deadline" : client_gone ? "client_closed" : "cancelled")
+                         + " req_id=" + req_id);
             slot->finish(nlohmann::json{{"reqId", req_id}, {"decision", "deny"}, {"cancelled", true}});
             break;
         }
