@@ -2,8 +2,12 @@
 // Batch queue control — pause / resume / cancel for file-batch workers.
 // In-memory only.  Persistence (sessions.json) lives in win/settings_store.
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <ctime>
+#include <iomanip>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -75,6 +79,20 @@ std::string file_sha256_fast(const std::string& path);
 std::string new_session_id();
 
 /// ISO-8601 UTC timestamp string for "now" (e.g. "2026-04-20T12:34:56Z").
-std::string utc_now_iso8601();
+inline std::string utc_now_iso8601()
+{
+    using namespace std::chrono;
+    const auto now = system_clock::now();
+    const auto t = system_clock::to_time_t(now);
+    std::tm tm{};
+#if defined(_MSC_VER)
+    gmtime_s(&tm, &t);
+#else
+    gmtime_r(&t, &tm);
+#endif
+    std::ostringstream ss;
+    ss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+    return ss.str();
+}
 
 } // namespace media

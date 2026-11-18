@@ -17,6 +17,7 @@
 // drop-in target for RapidFuzz if SIMD speed is ever needed.
 //
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -280,6 +281,90 @@ std::string lower_ascii(std::string s);
 
 /// Trim leading/trailing ASCII whitespace (space, tab, CR, LF).
 std::string trim(std::string s);
+
+/// Printable ASCII of the first @p max bytes. Controls and DEL are dropped.
+[[nodiscard]] inline std::string clip_text(std::string_view text, std::size_t max)
+{
+    std::string out;
+    for (unsigned char c : text.substr(0, max)) {
+        if (c >= 0x20 && c != 0x7f)
+            out.push_back(static_cast<char>(c));
+    }
+    return out;
+}
+
+/// Lowercase hex. A null @p data or a zero @p n is empty.
+[[nodiscard]] inline std::string to_hex(const std::uint8_t* data, std::size_t n)
+{
+    static constexpr char digits[] = "0123456789abcdef";
+    std::string out;
+    if (!data || n == 0)
+        return out;
+    out.reserve(n * 2);
+    for (std::size_t i = 0; i < n; ++i) {
+        out.push_back(digits[data[i] >> 4]);
+        out.push_back(digits[data[i] & 0x0f]);
+    }
+    return out;
+}
+
+/// Empty when @p hex is not an even run of hex digits.
+[[nodiscard]] inline std::vector<std::uint8_t> from_hex(std::string_view text)
+{
+    std::vector<std::uint8_t> out;
+    if (text.size() % 2 != 0)
+        return out;
+    auto nibble = [](char c) -> int {
+        if (c >= '0' && c <= '9')
+            return c - '0';
+        if (c >= 'a' && c <= 'f')
+            return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F')
+            return c - 'A' + 10;
+        return -1;
+    };
+    out.reserve(text.size() / 2);
+    for (std::size_t i = 0; i < text.size(); i += 2) {
+        const int hi = nibble(text[i]);
+        const int lo = nibble(text[i + 1]);
+        if (hi < 0 || lo < 0)
+            return {};
+        out.push_back(static_cast<std::uint8_t>((hi << 4) | lo));
+    }
+    return out;
+}
+
+/// Base64url, no padding.
+[[nodiscard]] inline std::string base64url(const std::uint8_t* data, std::size_t n)
+{
+    static constexpr char alphabet[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    std::string out;
+    if (!data || n == 0)
+        return out;
+    out.reserve((n * 4 + 2) / 3);
+    std::size_t i = 0;
+    for (; i + 2 < n; i += 3) {
+        const std::uint32_t v = (static_cast<std::uint32_t>(data[i]) << 16)
+                                | (static_cast<std::uint32_t>(data[i + 1]) << 8) | data[i + 2];
+        out.push_back(alphabet[(v >> 18) & 63]);
+        out.push_back(alphabet[(v >> 12) & 63]);
+        out.push_back(alphabet[(v >> 6) & 63]);
+        out.push_back(alphabet[v & 63]);
+    }
+    if (i + 1 == n) {
+        const std::uint32_t v = static_cast<std::uint32_t>(data[i]) << 16;
+        out.push_back(alphabet[(v >> 18) & 63]);
+        out.push_back(alphabet[(v >> 12) & 63]);
+    } else if (i + 2 == n) {
+        const std::uint32_t v = (static_cast<std::uint32_t>(data[i]) << 16)
+                                | (static_cast<std::uint32_t>(data[i + 1]) << 8);
+        out.push_back(alphabet[(v >> 18) & 63]);
+        out.push_back(alphabet[(v >> 12) & 63]);
+        out.push_back(alphabet[(v >> 6) & 63]);
+    }
+    return out;
+}
 
 /// Split into lower-cased ASCII alphanumeric tokens (keeps '-' and '_').
 /// Bytes outside ASCII letters and digits are separators.

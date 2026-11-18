@@ -112,22 +112,4 @@ std::string new_session_id()
          + hex(b & 0x0000FFFFFFFFFFFFULL, 12);
 }
 
-// ── ISO-8601 UTC timestamp ────────────────────────────────────────────────────
-
-std::string utc_now_iso8601()
-{
-    using namespace std::chrono;
-    const auto now = system_clock::now();
-    const auto t   = system_clock::to_time_t(now);
-    std::tm tm{};
-#if defined(_MSC_VER)
-    gmtime_s(&tm, &t);
-#else
-    gmtime_r(&t, &tm);
-#endif
-    std::ostringstream ss;
-    ss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
-    return ss.str();
-}
-
 } // namespace media
