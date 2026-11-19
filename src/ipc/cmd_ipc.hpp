@@ -45,6 +45,7 @@ enum class ProcessKind : uint8_t {
     Daemon    = 4,
     Assistant = 5,
     LlmAgent  = 6,
+    Node      = 7,
 };
 
 inline const char* kind_str(ProcessKind k) noexcept
@@ -56,6 +57,7 @@ inline const char* kind_str(ProcessKind k) noexcept
         case ProcessKind::Daemon: return "daemon";
         case ProcessKind::Assistant: return "assistant";
         case ProcessKind::LlmAgent: return "llm-agent";
+        case ProcessKind::Node: return "node";
         default:               return "unknown";
     }
 }
@@ -68,6 +70,7 @@ inline ProcessKind kind_from_str(const std::string& s) noexcept
     if (s == "daemon") return ProcessKind::Daemon;
     if (s == "assistant") return ProcessKind::Assistant;
     if (s == "llm-agent") return ProcessKind::LlmAgent;
+    if (s == "node") return ProcessKind::Node;
     return ProcessKind::Unknown;
 }
 
