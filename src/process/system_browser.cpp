@@ -1,6 +1,7 @@
 #include "process/system_browser.hpp"
 
 #include "net/uri.hpp"
+#include "process/process_helpers.hpp"
 
 #include <cerrno>
 #include <cstring>
@@ -109,46 +110,16 @@ bool profile_argument_ok(std::string_view profile)
 }
 
 #if defined(_WIN32)
-std::wstring utf8_to_wide(std::string_view value)
-{
-    if (value.empty())
-        return {};
-    const int wide_length = ::MultiByteToWideChar(
-        CP_UTF8, MB_ERR_INVALID_CHARS, value.data(), static_cast<int>(value.size()),
-        nullptr, 0);
-    if (wide_length <= 0)
-        return {};
-    std::wstring wide(static_cast<std::size_t>(wide_length), L'\0');
-    if (::MultiByteToWideChar(
-            CP_UTF8, MB_ERR_INVALID_CHARS, value.data(), static_cast<int>(value.size()),
-            wide.data(), wide_length) != wide_length)
-        return {};
-    return wide;
-}
-
-std::wstring quote_arg(const std::wstring& value)
-{
-    std::wstring out = L"\"";
-    for (wchar_t ch : value) {
-        if (ch == L'"')
-            out += L"\\\"";
-        else
-            out += ch;
-    }
-    out += L'"';
-    return out;
-}
-
 bool launch_profile(const std::wstring& exe, const std::wstring& profile, const std::wstring& url, bool firefox)
 {
     const DWORD attrs = ::GetFileAttributesW(exe.c_str());
     if (attrs == INVALID_FILE_ATTRIBUTES || (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
         return false;
-    std::wstring command = quote_arg(exe);
+    std::wstring command = media::process::quote_process_arg(exe);
     command += firefox ? L" -P " : L" --profile-directory=";
-    command += quote_arg(profile);
+    command += media::process::quote_process_arg(profile);
     command += L" ";
-    command += quote_arg(url);
+    command += media::process::quote_process_arg(url);
 
     STARTUPINFOW startup{};
     startup.cb = sizeof(startup);
@@ -222,9 +193,9 @@ Result open_for_login(
         return open(url_utf8, policy);
 
 #if defined(_WIN32)
-    const std::wstring wide_exe = utf8_to_wide(executable);
-    const std::wstring wide_profile = utf8_to_wide(profile);
-    const std::wstring wide_url = utf8_to_wide(url_utf8);
+    const std::wstring wide_exe = media::process::widen_utf8(std::string(executable));
+    const std::wstring wide_profile = media::process::widen_utf8(std::string(profile));
+    const std::wstring wide_url = media::process::widen_utf8(std::string(url_utf8));
     if (launch_profile(wide_exe, wide_profile, wide_url, firefox))
         return {true, {}};
 #else
