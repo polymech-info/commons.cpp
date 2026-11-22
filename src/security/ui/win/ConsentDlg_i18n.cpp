@@ -296,6 +296,63 @@ static const Strings kZh{
     L"\u4ece\u4ee5\u4e0b\u9875\u9762\u8fd0\u884c\u547d\u4ee4\uff1a",
 };
 
+static const MeshStrings kMeshEn{
+    "Device permission",
+    "%s wants to use %s",
+    "%s wants to use %s (%s)",
+    "This decides what that device may do on this computer. Deny leaves the request blocked.",
+    "Folders", "Microphone", "Camera", "Chat", "Tools", "This feature",
+    "read", "write", "list", "access",
+};
+static const MeshStrings kMeshDe{
+    "Ger\u00e4teberechtigung",
+    "%s m\u00f6chte %s nutzen",
+    "%s m\u00f6chte %s nutzen (%s)",
+    "Damit legst du fest, was dieses Ger\u00e4t auf diesem Computer darf. Ablehnen blockiert die Anfrage.",
+    "Ordner", "Mikrofon", "Kamera", "Chat", "Werkzeuge", "Diese Funktion",
+    "lesen", "schreiben", "auflisten", "Zugriff",
+};
+static const MeshStrings kMeshEs{
+    "Permiso del dispositivo",
+    "%s quiere usar %s",
+    "%s quiere usar %s (%s)",
+    "Esto decide qu\u00e9 puede hacer ese dispositivo en este equipo. Denegar deja la solicitud bloqueada.",
+    "Carpetas", "Micr\u00f3fono", "C\u00e1mara", "Chat", "Herramientas", "Esta funci\u00f3n",
+    "leer", "escribir", "listar", "acceso",
+};
+static const MeshStrings kMeshFr{
+    "Autorisation de l\u2019appareil",
+    "%s souhaite utiliser %s",
+    "%s souhaite utiliser %s (%s)",
+    "Cela d\u00e9termine ce que cet appareil peut faire sur cet ordinateur. Refuser bloque la demande.",
+    "Dossiers", "Microphone", "Cam\u00e9ra", "Discussion", "Outils", "Cette fonction",
+    "lire", "\u00e9crire", "lister", "acc\u00e8s",
+};
+static const MeshStrings kMeshIt{
+    "Autorizzazione dispositivo",
+    "%s vuole usare %s",
+    "%s vuole usare %s (%s)",
+    "Questo decide cosa quel dispositivo pu\u00f2 fare su questo computer. Nega lascia la richiesta bloccata.",
+    "Cartelle", "Microfono", "Fotocamera", "Chat", "Strumenti", "Questa funzione",
+    "leggere", "scrivere", "elencare", "accesso",
+};
+static const MeshStrings kMeshAr{
+    "\u0625\u0630\u0646 \u0627\u0644\u062c\u0647\u0627\u0632",
+    "%s \u064a\u0631\u064a\u062f \u0627\u0633\u062a\u062e\u062f\u0627\u0645 %s",
+    "%s \u064a\u0631\u064a\u062f \u0627\u0633\u062a\u062e\u062f\u0627\u0645 %s (%s)",
+    "\u0647\u0630\u0627 \u064a\u062d\u062f\u062f \u0645\u0627 \u064a\u0645\u0643\u0646 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632 \u0641\u0639\u0644\u0647 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632. \u0627\u0644\u0631\u0641\u0636 \u064a\u0628\u0642\u064a \u0627\u0644\u0637\u0644\u0628 \u0645\u062d\u0638\u0648\u0631\u064b\u0627.",
+    "\u0627\u0644\u0645\u062c\u0644\u062f\u0627\u062a", "\u0627\u0644\u0645\u064a\u0643\u0631\u0648\u0641\u0648\u0646", "\u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627", "\u0627\u0644\u0645\u062d\u0627\u062f\u062b\u0629", "\u0627\u0644\u0623\u062f\u0648\u0627\u062a", "\u0647\u0630\u0647 \u0627\u0644\u0645\u064a\u0632\u0629",
+    "\u0642\u0631\u0627\u0621\u0629", "\u0643\u062a\u0627\u0628\u0629", "\u0639\u0631\u0636", "\u0648\u0635\u0648\u0644",
+};
+static const MeshStrings kMeshZh{
+    "\u8bbe\u5907\u6743\u9650",
+    "%s \u60f3\u8981\u4f7f\u7528 %s",
+    "%s \u60f3\u8981\u4f7f\u7528 %s\uff08%s\uff09",
+    "\u8fd9\u51b3\u5b9a\u8be5\u8bbe\u5907\u5728\u672c\u7535\u8111\u4e0a\u53ef\u4ee5\u505a\u4ec0\u4e48\u3002\u62d2\u7edd\u5219\u4fdd\u6301\u62e6\u622a\u8bf7\u6c42\u3002",
+    "\u6587\u4ef6\u5939", "\u9ea6\u514b\u98ce", "\u6444\u50cf\u5934", "\u804a\u5929", "\u5de5\u5177", "\u6b64\u529f\u80fd",
+    "\u8bfb\u53d6", "\u5199\u5165", "\u5217\u8868", "\u8bbf\u95ee",
+};
+
 } // namespace
 
 const Strings& strings_for(std::string_view lang) {
@@ -310,6 +367,20 @@ const Strings& strings_for(std::string_view lang) {
         if (a == 'z' && b == 'h') return kZh;
     }
     return kEn;
+}
+
+const MeshStrings& mesh_strings_for(std::string_view lang) {
+    if (lang.size() >= 2) {
+        const char a = (char)std::tolower((unsigned char)lang[0]);
+        const char b = (char)std::tolower((unsigned char)lang[1]);
+        if (a == 'd' && b == 'e') return kMeshDe;
+        if (a == 'e' && b == 's') return kMeshEs;
+        if (a == 'f' && b == 'r') return kMeshFr;
+        if (a == 'i' && b == 't') return kMeshIt;
+        if (a == 'a' && b == 'r') return kMeshAr;
+        if (a == 'z' && b == 'h') return kMeshZh;
+    }
+    return kMeshEn;
 }
 
 } // namespace pm::security::ui::i18n

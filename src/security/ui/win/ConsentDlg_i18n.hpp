@@ -77,4 +77,27 @@ struct Strings {
 /// Only the first two BCP-47 characters are examined; "de-AT", "es-419", etc. all match.
 [[nodiscard]] const Strings& strings_for(std::string_view lang);
 
+/// Copy for mesh peer `level=ask` prompts (ConsentDlg body text). UTF-8.
+/// Same language tags as `strings_for`.
+struct MeshStrings {
+    const char* title;
+    /// "%s wants to use %s" — peer name, capability label.
+    const char* why_fmt;
+    /// "%s wants to use %s (%s)" — peer, capability, operation label.
+    const char* why_op_fmt;
+    const char* possible_risk;
+    const char* cap_vfs;
+    const char* cap_audio_capture;
+    const char* cap_video_capture;
+    const char* cap_chat_turn;
+    const char* cap_tools_call;
+    const char* cap_other;
+    const char* op_read;
+    const char* op_write;
+    const char* op_list;
+    const char* op_other;
+};
+
+[[nodiscard]] const MeshStrings& mesh_strings_for(std::string_view lang);
+
 } // namespace pm::security::ui::i18n

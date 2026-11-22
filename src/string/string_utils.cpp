@@ -9,6 +9,16 @@
 #include <mutex>
 #include <unordered_set>
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 namespace media::strutil {
 
 namespace {
@@ -84,6 +94,26 @@ std::string lower_ascii(std::string s)
             c = static_cast<char>(c - 'A' + 'a');
     }
     return s;
+}
+
+std::wstring utf8_to_wide(std::string_view text)
+{
+    if (text.empty())
+        return {};
+#if defined(_WIN32)
+    const int n = ::MultiByteToWideChar(
+        CP_UTF8, MB_ERR_INVALID_CHARS, text.data(), static_cast<int>(text.size()), nullptr, 0);
+    if (n <= 0)
+        return {};
+    std::wstring wide(static_cast<size_t>(n), L'\0');
+    if (::MultiByteToWideChar(
+            CP_UTF8, MB_ERR_INVALID_CHARS, text.data(), static_cast<int>(text.size()), wide.data(), n)
+        != n)
+        return {};
+    return wide;
+#else
+    return media::path::path_from_utf8(text).wstring();
+#endif
 }
 
 std::string trim(std::string s)

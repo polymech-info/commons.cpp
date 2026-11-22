@@ -282,6 +282,9 @@ std::string lower_ascii(std::string s);
 /// Trim leading/trailing ASCII whitespace (space, tab, CR, LF).
 std::string trim(std::string s);
 
+/// UTF-8 bytes to a wide string. Empty input, or bytes the converter rejects, is empty.
+[[nodiscard]] std::wstring utf8_to_wide(std::string_view text);
+
 /// Printable ASCII of the first @p max bytes. Controls and DEL are dropped.
 [[nodiscard]] inline std::string clip_text(std::string_view text, std::size_t max)
 {
