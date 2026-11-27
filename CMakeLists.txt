@@ -43,6 +43,7 @@ list(FILTER PM_COMMONS_SOURCES EXCLUDE REGEX "markdown[/\\\\]markdown_android\\.
 # headers that this static library does not set up on every platform.
 foreach(_drop IN ITEMS
     "http_client\\.cpp$"
+    "pinned_http\\.cpp$"
     "fs_size_win32\\.cpp$"
     "stdio_child_runner\\.cpp$"
     "cli_cancel\\.cpp$"
@@ -308,6 +309,30 @@ endif()
 
 if(TARGET pm-commons-lib AND NOT TARGET pm::commons)
   add_library(pm::commons ALIAS pm-commons-lib)
+endif()
+
+# Header-only SPKI pin smoke (no curl). Always available for package tests.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
+   AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cli/pin_format.cpp")
+  add_executable(pm-commons-pin cli/pin_format.cpp)
+  target_include_directories(pm-commons-pin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+  target_compile_features(pm-commons-pin PRIVATE cxx_std_20)
+  if(MSVC)
+    target_compile_options(pm-commons-pin PRIVATE /W3 /utf-8 /EHsc)
+  else()
+    target_compile_options(pm-commons-pin PRIVATE -Wall -Wextra)
+  endif()
+endif()
+
+# Optional HTTP/TLS client (pin-before-bearer). Not part of lean commons.
+# See docs/vfs-refactor.md Phase 1. Headers live under include/pm/commons/net/.
+option(PM_COMMONS_WITH_NET "Build pm-commons-net (libcurl HTTP client)" ON)
+if(PM_COMMONS_WITH_NET)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/net_target.cmake")
+  pm_commons_add_net_target()
+  if(NOT TARGET pm-commons-net AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    message(STATUS "pm-commons-net skipped: CURL::libcurl is not in this build")
+  endif()
 endif()
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND TARGET pm-commons-lib)

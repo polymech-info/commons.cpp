@@ -1,6 +1,10 @@
 # pm-commons
 
-Portable primitives for Tanit and other PolyMech apps
+Portable primitives for Tanit and other PolyMech apps.
+
+Package triangle (settled): **commons** = primitives + optional HTTP/TLS;
+**vfs** = Store / URI / backends / transfers; **server** = node client +
+listener. See [docs/vfs-refactor.md](../../docs/vfs-refactor.md).
 
 `operator bool` on `pm::commons::Error` is true on failure.
 
@@ -65,9 +69,27 @@ Search, audio, video, and a standalone image link `pm::commons` when this target
 
 Tanit compiles these `.cpp` files into `pm-media`. It does not link `pm-commons-lib`. `src/core/path_sanitizer.cpp` is gone; `media::path` comes from `src/path/path.cpp`. The other host copies (`string_utils.cpp`, `library_utils.cpp`, `uri.cpp`, the fs filters) are still compiled too, under their original namespaces. VFS, audio, and video do not use this package. HTTP, curl, Boost.URL, libmagic, and jq are not part of these sources. `validate_path_spec_for_input_selection` calls the host's `media::is_http_url`. The standalone executable supplies a prefix check so its CLI links.
 
+## Optional HTTP (`pm-commons-net`)
+
+Pin-before-bearer HTTPS for node dial and similar callers. Headers:
+`include/pm/commons/net/{http_client,http_types,tls,cancellation}.hpp`.
+Implementation: `src/net/pinned_http.cpp`. Built only when `CURL::libcurl`
+exists and `PM_COMMONS_WITH_NET=ON`. Lean commons does not link it.
+
+```cmake
+if(TARGET pm-commons-net)
+  target_link_libraries(${HOST} PRIVATE pm-commons-net)
+endif()
+```
+
+Smoke tool (no curl): `pm-commons-pin <64-hex>` → JSON `{ok,pin}`.
+`npm run build:pin` then `npm run test:net`. CMS paths, peer grants, and
+mutation retries stay out of this target.
+
 ## What is intentionally absent
 
-- Sockets, an HTTP client, and `cpp-httplib`. `src/lib/net/http_client.cpp` and `src/core/url_fetch.cpp` stay in the host.
+- Product HTTP (CMS `/api/vfs`, Zitadel). Use `pm-commons-net` for transport only.
+- `cpp-httplib` server sockets. Host `http_client.cpp` / `url_fetch` remain until call sites move.
 - nlohmann JSON inside `pm-commons-lib`. The CLI uses it only to print results. Claim files and IPC frames use a small fixed encoder.
 - Win32 types in public headers. `LoadLibrary` is a Windows translation unit; Android, Linux, and macOS use `dlopen` (`src/library/library_posix.cpp`). This tree was not cross-compiled for those targets.
 - A second path policy. `media::path` is the original sanitizer, including its `std::regex` checks and the Windows wide helpers. `normalize_local_path` returns native separators.

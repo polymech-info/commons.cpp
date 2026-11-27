@@ -9,6 +9,7 @@
     "configure:release": "node ../../scripts/cmake.mjs --preset release",
     "build:cpp": "npm run configure && node ../../scripts/cmake.mjs --build --preset dev --target pm-commons",
     "build:cpp-fast": "node ../../scripts/cmake.mjs --build --preset dev --target pm-commons",
+    "build:pin": "node ../../scripts/cmake.mjs --build --preset dev --target pm-commons-pin",
     "build:cpp:release": "npm run configure:release && node ../../scripts/cmake.mjs --build --preset release --target pm-commons",
     "test": "node tests/run.mjs",
     "test:string": "node tests/test-string.mjs",
@@ -19,6 +20,7 @@
     "test:process": "node tests/test-process.mjs",
     "test:task": "node tests/test-task.mjs",
     "test:ipc": "node tests/test-ipc.mjs",
+    "test:net": "node tests/test-net.mjs",
     "test:build": "npm run build:cpp && npm test"
   }
 }

@@ -3,7 +3,7 @@
 #include "fs/path_sanitizer.hpp"
 #include "settings/settings_store.hpp"
 #include "settings/settings_portable.hpp"
-#include "vfs/virtual_uri.hpp"
+#include <pm/vfs/uri.hpp>
 #include "logging/pm_log.hpp"
 #include "string/string_utils.hpp"
 

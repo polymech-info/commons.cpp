@@ -13,6 +13,7 @@ const files = [
   'test-process.mjs',
   'test-task.mjs',
   'test-ipc.mjs',
+  // test-net.mjs needs pm-commons-pin (`npm run build:pin` / `npm run test:net`)
 ];
 
 let failed = 0;
