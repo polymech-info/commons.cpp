@@ -50,7 +50,8 @@ struct Response {
 };
 
 using BodyChunk = std::function<bool(const char* data, std::size_t n)>;
-using HeaderSink = std::function<void(long status, const std::string& content_type,
+/// Return false to abort before any body bytes are delivered.
+using HeaderSink = std::function<bool(long status, const std::string& content_type,
                                       std::uint64_t content_length,
                                       const std::string& content_range)>;
 using Progress = std::function<void(std::uint64_t done, std::uint64_t total)>;

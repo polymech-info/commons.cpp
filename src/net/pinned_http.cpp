@@ -103,8 +103,13 @@ struct HeaderState {
     long status = 0;
     std::string content_type;
     std::string content_range;
+    std::string content_encoding;
     std::uint64_t content_length = 0;
     HeaderSink sink;
+    /// When set, adopt Content-Length as the progress total once headers finish
+    /// (only if the caller left expected=0 and the body is not content-coded).
+    FileSink* file_sink = nullptr;
+    StreamSink* stream_sink = nullptr;
     bool fired = false;
 };
 
@@ -116,8 +121,27 @@ size_t header_cb(char* buffer, size_t size, size_t nitems, void* userdata)
     while (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
         line.remove_suffix(1);
     if (line.empty()) {
-        if (!st->fired && st->sink) {
-            st->sink(st->status, st->content_type, st->content_length, st->content_range);
+        if (!st->fired) {
+            const bool coded = !st->content_encoding.empty()
+                && st->content_encoding != "identity";
+            // Content-Length is the on-wire size; only safe as transfer total
+            // when the body is not transformed by Content-Encoding.
+            if (!coded && st->content_length > 0) {
+                if (st->file_sink && st->file_sink->expected == 0)
+                    st->file_sink->expected = st->content_length;
+                if (st->stream_sink && st->stream_sink->expected == 0)
+                    st->stream_sink->expected = st->content_length;
+            }
+            if (st->sink) {
+                if (!st->sink(
+                        st->status, st->content_type, st->content_length, st->content_range)) {
+                    if (st->stream_sink)
+                        st->stream_sink->aborted = true;
+                    st->fired = true;
+                    // Abort before CURLOPT_WRITEFUNCTION sees the body.
+                    return 0;
+                }
+            }
             st->fired = true;
         }
         return n;
@@ -151,6 +175,8 @@ size_t header_cb(char* buffer, size_t size, size_t nitems, void* userdata)
         st->content_type.assign(value);
     else if (key == "content-range")
         st->content_range.assign(value);
+    else if (key == "content-encoding")
+        st->content_encoding.assign(value.data(), value.size());
     else if (key == "content-length") {
         std::uint64_t v = 0;
         for (unsigned char c : value) {
@@ -222,6 +248,11 @@ void apply_common(CURL* curl, const Request& req, const std::string& pin, curl_s
         req.connect_timeout_ms <= 0 ? 0L : static_cast<long>((req.connect_timeout_ms + 999) / 1000);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout_s);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, connect_s);
+    curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+    curl_easy_setopt(curl, CURLOPT_TCP_KEEPIDLE, 30L);
+    curl_easy_setopt(curl, CURLOPT_TCP_KEEPINTVL, 15L);
+    // Larger socket read buffer helps sustained 4K media Range streams.
+    curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 256L * 1024L);
     if (pin.empty()) {
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, req.follow_redirects ? 1L : 0L);
         curl_easy_setopt(curl, CURLOPT_MAXREDIRS, req.max_redirects);
@@ -319,6 +350,9 @@ Response request_to_file(const Request& req, const std::filesystem::path& dest, 
     sink.expected = options.expected_size;
     sink.cancel = req.cancel;
 
+    HeaderState headers;
+    headers.file_sink = &sink;
+
     CURL* curl = curl_easy_init_ca();
     if (!curl) {
         std::fclose(fp);
@@ -330,6 +364,8 @@ Response request_to_file(const Request& req, const std::filesystem::path& dest, 
     apply_common(curl, req, prep.pin, hdr);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &sink);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_cb);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &headers);
 
     const CURLcode cc = curl_easy_perform(curl);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &out.status);
@@ -377,6 +413,7 @@ Response request_stream(const Request& req, StreamOptions options)
 
     HeaderState headers;
     headers.sink = options.on_headers;
+    headers.stream_sink = &sink;
 
     CURL* curl = curl_easy_init_ca();
     if (!curl)
